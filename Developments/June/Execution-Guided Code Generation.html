@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Tutorial: Execution Guided Line-by-Line Code Generation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            color: #d1d5db;
+        }
+        .card {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+        .btn {
+            background-color: #3b82f6;
+            color: white;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #2563eb;
+        }
+        h1, h2, h3 {
+            color: #f9fafb;
+            font-weight: 700;
+        }
+        .code-block {
+            background-color: #0d1117;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            border: 1px solid #374151;
+        }
+        .code-line {
+            opacity: 0.7;
+            transition: opacity 0.3s ease, background-color 0.3s ease;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        .code-line.active {
+            opacity: 1;
+            background-color: rgba(59, 130, 246, 0.2);
+        }
+        .trace-box {
+            display: none;
+            background-color: #374151;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            border-left: 4px solid #3b82f6;
+        }
+        .trace-box.visible {
+            display: block;
+        }
+        .flow-arrow {
+            color: #4b5563;
+            font-size: 2rem;
+            line-height: 1;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        .flow-step {
+            border: 2px dashed #374151;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">Execution-Guided Code Generation</h1>
+            <p class="text-lg text-gray-400 max-w-3xl mx-auto">An interactive tutorial on the EG-CFG method, which uses real-time execution feedback to teach Language Models how to code better.</p>
+            <div class="mt-6 flex justify-center gap-4">
+                 <a href="https://github.com/boazlavon/eg_cfg" target="_blank" class="btn">View Code on GitHub</a>
+                 <a href="https://arxiv.org/abs/2406.10948" target="_blank" class="btn" style="background-color: #4b5563;">Read the Paper</a>
+            </div>
+        </header>
+
+        <!-- Section 1: The Core Problem -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-6 text-center">The Challenge with AI Code Generation</h2>
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="card">
+                    <h3 class="text-2xl font-semibold mb-4">Traditional Approach</h3>
+                    <p class="mb-4">Most Language Models (LLMs) generate an entire block of code based on patterns they've learned from static text. They write the whole solution first, then check if it works. This is like writing an entire essay without pausing to re-read a single sentence.</p>
+                    <div class="text-center">
+                        <svg class="w-24 h-24 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <p class="mt-2 font-semibold">Generate -> Test -> Fail -> Repeat</p>
+                        <p class="text-sm text-gray-400">This often leads to code that looks correct but has subtle execution errors.</p>
+                    </div>
+                </div>
+                <div class="card border-blue-500">
+                    <h3 class="text-2xl font-semibold mb-4">The EG-CFG Approach</h3>
+                    <p class="mb-4">Execution-Guided Classifier-Free Guidance (EG-CFG) mimics how human programmers work. It generates code line-by-line, running and testing small pieces as it goes. This provides constant, real-time feedback to guide the generation process.</p>
+                    <div class="text-center">
+                        <svg class="w-24 h-24 mx-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        <p class="mt-2 font-semibold">Generate line -> Test line -> Guide -> Repeat</p>
+                        <p class="text-sm text-gray-400">This dynamic process helps catch errors early and leads to more robust code.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: How EG-CFG Works -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-8 text-center">How It Works: A High-Level View</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Step 1 -->
+                <div class="card text-center">
+                    <div class="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/20 text-blue-400 text-2xl font-bold">1</div>
+                    <h3 class="text-xl font-semibold mb-2">Sample Candidates</h3>
+                    <p class="text-gray-400">At each line, instead of writing just one continuation, the model uses beam search to generate several potential next lines of code.</p>
+                </div>
+                <!-- Step 2 -->
+                <div class="card text-center">
+                    <div class="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/20 text-blue-400 text-2xl font-bold">2</div>
+                    <h3 class="text-xl font-semibold mb-2">Execute & Get Feedback</h3>
+                    <p class="text-gray-400">Each candidate line is appended to the current code, and this partial program is executed against test cases. The runtime behavior (the "execution trace") is captured.</p>
+                </div>
+                <!-- Step 3 -->
+                <div class="card text-center">
+                    <div class="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/20 text-blue-400 text-2xl font-bold">3</div>
+                    <h3 class="text-xl font-semibold mb-2">Guide Generation</h3>
+                    <p class="text-gray-400">The execution traces are fed back into the model as a "guidance signal." This helps the model decide which token to generate next, steering it towards a correct solution.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Example -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-8 text-center">Interactive Example</h2>
+            <div class="card">
+                <p class="mb-4 text-center">Let's say the model is trying to write a function `first_non_repeating_character(s)`. It has already generated the first few lines. Now, it needs to decide what comes next. Hover over the candidate lines below to see their simulated execution traces and how they guide the model.</p>
+                <div class="grid md:grid-cols-2 gap-8 items-start">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Current Code:</h3>
+                        <div class="code-block">
+                            <pre><code>def first_non_repeating_character(s):
+    char_count = {}
+    for char in s:
+        char_count[char] = char_count.get(char, 0) + 1
+    
+    # What's the next line?</code></pre>
+                        </div>
+                        <h3 class="text-xl font-semibold mt-6 mb-4">Candidate Next Lines (Hover Me!):</h3>
+                        <div class="code-block">
+                            <pre><code id="candidate-lines">
+<span class="code-line" data-trace="trace-1">for char in s:</span>
+<span class="code-line" data-trace="trace-2">for char in char_count:</span>
+<span class="code-line" data-trace="trace-3">return None # Incorrect logic</span>
+                            </code></pre>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Execution Trace Feedback:</h3>
+                        <div id="trace-container">
+                             <div class="trace-box" id="trace-0">
+                                <p class="font-semibold text-gray-300">Hover over a candidate line to see its execution feedback when run with the test case: `first_non_repeating_character("aabc")`</p>
+                            </div>
+                            <div class="trace-box" id="trace-1">
+                                <p class="font-semibold text-green-400">Trace for `for char in s:`</p>
+                                <p class="text-sm">This loop iterates through the original string "aabc", preserving order.</p>
+                                <pre class="mt-2 text-xs">char='a' -> check count -> count is 2 (skip)
+char='a' -> check count -> count is 2 (skip)
+char='b' -> check count -> count is 1 -> returns 'b' (INCORRECT! 'c' is the right answer)</pre>
+                                <p class="mt-2 text-xs text-yellow-400">Guidance: Close! The loop structure is promising. The logic *inside* the loop needs adjustment, but this is a good direction.</p>
+                            </div>
+                            <div class="trace-box" id="trace-2">
+                                <p class="font-semibold text-yellow-400">Trace for `for char in char_count:`</p>
+                                <p class="text-sm">This loop iterates through the unique characters: "a", "b", "c". This loses the original order.</p>
+                                <pre class="mt-2 text-xs">char='a' -> check count -> count is 2 (skip)
+char='b' -> check count -> count is 1 -> returns 'b' (INCORRECT! Order is not preserved)</pre>
+                                <p class="mt-2 text-xs text-red-500">Guidance: Logic is flawed. Iterating over the dictionary keys (`char_count`) loses the required character order from the original string.</p>
+                            </div>
+                             <div class="trace-box" id="trace-3">
+                                <p class="font-semibold text-red-400">Trace for `return None`</p>
+                                <p class="text-sm">This immediately ends the function, failing the test case.</p>
+                                <pre class="mt-2 text-xs">Function returns None.
+Test case fails. Expected 'c', got None.</pre>
+                                <p class="mt-2 text-xs text-red-400">Guidance: Strong negative signal. This path is a dead end.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- PART TWO: DEEPER DIVE -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-8 text-center">Part Two: A Deeper Dive into the Feedback Cycle</h2>
+            <div class="card">
+                <p class="text-center text-lg mb-8">The magic of EG-CFG lies in how it creates and uses the execution feedback signal. It's a constant loop of exploration and guidance. Let's break down the full cycle that happens for each line of generated code.</p>
+
+                <div class="flow-step">
+                    <h3 class="text-xl font-semibold text-center mb-4">1. The Starting Point: A Partial Solution</h3>
+                    <p class="text-center">The model has some code already, but it's incomplete. Let's call this prompt `p_sol`.</p>
+                    <div class="code-block mt-2 w-max mx-auto"><pre><code>p_sol = "def func(s): \n  counts = {} \n  ..."</code></pre></div>
+                </div>
+
+                <div class="flow-arrow">↓</div>
+
+                <div class="flow-step">
+                    <h3 class="text-xl font-semibold text-center mb-4">2. Explore Possible Futures (Beam Search)</h3>
+                    <p class="text-center">The model generates several different candidate continuations for the next few lines of code. This is like a programmer thinking, "What if I try this? Or maybe this?"</p>
+                </div>
+
+                <div class="flow-arrow">↓</div>
+                
+                <div class="flow-step">
+                    <h3 class="text-xl font-semibold text-center mb-4">3. Execute and Gather Traces</h3>
+                    <p class="text-center">Each candidate is temporarily added to `p_sol` and run against the provided test cases. The model records exactly what happens: variable values, errors, return values, etc. This creates a detailed "execution trace" for each candidate.</p>
+                </div>
+
+                <div class="flow-arrow">↓</div>
+                
+                <div class="flow-step">
+                    <h3 class="text-xl font-semibold text-center mb-4">4. Form the Guidance Signal (`p_dyn`)</h3>
+                    <p class="text-center">All the execution traces are bundled together into a special "dynamic signal" prompt. This prompt, `p_dyn`, is essentially the original prompt (`p_sol`) but with all the execution feedback injected into it. It tells the model: "Here's what happened when I tried a few things..."</p>
+                </div>
+
+                <div class="flow-arrow">↓</div>
+
+                <div class="flow-step">
+                     <h3 class="text-xl font-semibold text-center mb-4">5. The Core of Guidance: CFG</h3>
+                    <p class="text-center">This is the key step. Classifier-Free Guidance (CFG) guides the model's next decision by comparing two scenarios:</p>
+                    <ul class="list-disc list-inside mx-auto max-w-2xl mt-4 text-left space-y-2">
+                        <li><strong class="text-gray-300">Unconditional (`p_sol`):</strong> "What word would you normally predict next, based only on the code you've written so far?"</li>
+                        <li><strong class="text-blue-400">Conditional (`p_dyn`):</strong> "Now, considering all that execution feedback I just gave you, what word would you predict next?"</li>
+                    </ul>
+                    <p class="text-center mt-4">By calculating the difference between these two predictions, the model can isolate the influence of the execution feedback. It then "nudges" its final decision in the direction suggested by the feedback, making it more likely to choose a token that leads to executable, correct code.</p>
+                </div>
+                
+                <div class="flow-arrow">🔄</div>
+
+                <div class="flow-step">
+                     <h3 class="text-xl font-semibold text-center mb-4">6. Generate and Repeat</h3>
+                    <p class="text-center">The model generates the next token (or line) based on this guided choice. This new code is appended to the solution, and the entire cycle repeats for the next line until the function is complete.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Performance Charts -->
+        <section>
+            <h2 class="text-3xl font-bold mb-8 text-center">Performance Benchmarks</h2>
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-4 text-center">MBPP & MBPP-ET</h3>
+                    <canvas id="mbppChart"></canvas>
+                </div>
+                <div class="card">
+                     <h3 class="text-xl font-semibold mb-4 text-center">HumanEval & HumanEval-ET</h3>
+                    <canvas id="humanEvalChart"></canvas>
+                </div>
+                <div class="card lg:col-span-2">
+                    <h3 class="text-xl font-semibold mb-4 text-center">CodeContests (Competitive Programming)</h3>
+                    <canvas id="codeContestsChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Interactive Example Logic
+        const candidateLines = document.querySelectorAll('.code-line');
+        const traceContainer = document.getElementById('trace-container');
+        const traces = document.querySelectorAll('.trace-box');
+        const defaultTrace = document.getElementById('trace-0');
+
+        defaultTrace.classList.add('visible');
+
+        candidateLines.forEach(line => {
+            line.addEventListener('mouseenter', () => {
+                // Hide all traces
+                traces.forEach(t => t.classList.remove('visible'));
+                // Deactivate all lines
+                candidateLines.forEach(l => l.classList.remove('active'));
+
+                // Show target trace
+                const traceId = line.getAttribute('data-trace');
+                const targetTrace = document.getElementById(traceId);
+                if(targetTrace) {
+                    targetTrace.classList.add('visible');
+                }
+                // Activate current line
+                line.classList.add('active');
+            });
+        });
+
+        // Chart.js implementation
+        const chartOptions = {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: '#d1d5db' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y + '%';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { 
+                        color: '#d1d5db',
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#d1d5db' }
+                }
+            }
+        };
+
+        // MBPP Chart
+        new Chart(document.getElementById('mbppChart'), {
+            type: 'bar',
+            data: {
+                labels: ['GPT-4 Baseline', 'GPT-4 MetaGPT', 'Claude-S Baseline', 'QualityFlow', 'DeepSeek-V3 Baseline', 'DeepSeek-V3 EG-CFG (SOTA)'],
+                datasets: [{
+                    label: 'MBPP Accuracy (%)',
+                    data: [68.3, 87.7, 88.7, 94.2, 82.8, 96.6],
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'MBPP-ET Accuracy (%)',
+                    data: [49.2, null, null, null, 64.8, 73.0], // ET data not available for all
+                    backgroundColor: 'rgba(34, 197, 94, 0.5)',
+                    borderColor: 'rgba(34, 197, 94, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: chartOptions
+        });
+
+        // HumanEval Chart
+        new Chart(document.getElementById('humanEvalChart'), {
+            type: 'bar',
+            data: {
+                labels: ['GPT-4 Baseline', 'GPT-4 MetaGPT', 'GPT-40 LPW (SOTA)', 'DeepSeek-V3 Baseline', 'DeepSeek-V3 EG-CFG'],
+                datasets: [{
+                    label: 'HumanEval Accuracy (%)',
+                    data: [67.7, 85.9, 98.2, 82.9, 97.0],
+                    backgroundColor: 'rgba(239, 68, 68, 0.5)',
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'HumanEval-ET Accuracy (%)',
+                    data: [50.6, 70.1, 84.8, 79.2, 87.2], // Our method sets new SOTA here
+                    backgroundColor: 'rgba(249, 115, 22, 0.5)',
+                    borderColor: 'rgba(249, 115, 22, 1)',
+                    borderWidth: 1
+                }]
+            },
+             options: chartOptions
+        });
+
+        // CodeContests Chart
+        new Chart(document.getElementById('codeContestsChart'), {
+            type: 'bar',
+            data: {
+                labels: ['GPT-3.5 MapCoder', 'GPT-4 CodeSim', 'GPT-40 LPW', 'DeepSeek-V3 Baseline', 'DeepSeek-V3 MapCoder', 'DeepSeek-V3 EG-CFG (SOTA)'],
+                datasets: [{
+                    label: 'CodeContests Accuracy (%)',
+                    data: [12.7, 29.1, 34.7, 41.8, 50.3, 58.2],
+                    backgroundColor: 'rgba(168, 85, 247, 0.5)',
+                    borderColor: 'rgba(168, 85, 247, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, max: 60 } } }
+        });
+
+    </script>
+</body>
+</html>
