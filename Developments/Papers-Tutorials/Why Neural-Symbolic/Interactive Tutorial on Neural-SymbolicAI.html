@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Tutorial: Neural-Symbolic AI</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- KaTeX for LaTeX Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0KOVEMeaMurHnH2shfxCnhtGz14TXrvU+pKiMcfKScwhGdrNenGI4" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlGwcjNTAIQHIgsOcwrBwl+bMrNrq4fAUiY1elIOHcDdXbCQu1aAPQNADDK" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" xintegrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax5AScKprq27eyFSokGDTxk/XtWH1Y/iSJK" crossorigin="anonymous"></script>
+
+    <!-- three.js for 3D graphics -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.156.1/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.156.1/examples/jsm/"
+        }
+    }
+    </script>
+
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        .katex-display {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0.5rem 0;
+        }
+        .interactive-zone {
+            border: 2px dashed #4a5568;
+            background-color: #1a202c;
+        }
+        .prose {
+            max-width: 80ch;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <div class="flex flex-col lg:flex-row">
+        <!-- Sidebar Navigation -->
+        <nav class="sticky top-0 h-full lg:h-screen bg-gray-900/80 backdrop-blur-md p-6 border-b lg:border-b-0 lg:border-r border-gray-700 w-full lg:w-64 lg:overflow-y-auto">
+            <h2 class="text-xl font-bold text-white mb-6">Tutorial Index</h2>
+            <ul class="space-y-3">
+                <li><a href="#page1" class="hover:text-cyan-400 transition-colors">1. The Two Minds of AI</a></li>
+                <li><a href="#page2" class="hover:text-cyan-400 transition-colors">2. A Brief History</a></li>
+                <li><a href="#page3" class="hover:text-cyan-400 transition-colors">3. Motivation</a></li>
+                <li><a href="#page4" class="hover:text-cyan-400 transition-colors">4. Math: RoPE</a></li>
+                <li><a href="#page5" class="hover:text-cyan-400 transition-colors">5. RoPE in N-Dimensions</a></li>
+                <li><a href="#page6" class="hover:text-cyan-400 transition-colors">6. Math: Hyperbolic Embeddings</a></li>
+                <li><a href="#page7" class="hover:text-cyan-400 transition-colors">7. Neural Networks in Hyperbolic Space</a></li>
+                <li><a href="#page8" class="hover:text-cyan-400 transition-colors">8. Math: Quaternions</a></li>
+                <li><a href="#page9" class="hover:text-cyan-400 transition-colors">9. The Grand Synthesis</a></li>
+                <li><a href="#page10" class="hover:text-cyan-400 transition-colors">10. Conclusion</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6 md:p-10 lg:p-12">
+            <div class="prose prose-invert lg:prose-xl mx-auto">
+                <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 !leading-tight">Neural-Symbolic AI: An Interactive Tutorial</h1>
+                <p class="text-xl text-gray-400">Welcome to this comprehensive guide to the fascinating world of Neural-Symbolic AI. Journey from fundamental concepts to advanced mathematical frameworks, with interactive examples to illuminate the key ideas.</p>
+
+                <!-- PAGE 1 -->
+                <section id="page1" class="py-12">
+                    <h2 class="text-3xl font-bold border-b border-cyan-500 pb-2 mb-6">1. The Two Minds of AI</h2>
+                    <p>At its heart, Neural-Symbolic AI is an attempt to build a more complete form of artificial intelligence by integrating two different ways of "thinking," mirroring Daniel Kahneman's theory of System 1 and System 2 thinking.</p>
+                    
+                    <h3 class="text-2xl font-semibold mt-6 mb-2">System 1 (The Neural Network)</h3>
+                    <p>This is your fast, intuitive, automatic thinking. In AI, <strong>Artificial Neural Networks</strong> are the champions of System 1. They learn patterns from vast amounts of data. A simple neuron's operation can be expressed as: $$y = \sigma(\sum_{i=1}^{n} w_i x_i + b)$$ Where $x_i$ are inputs, $w_i$ are learned weights, $b$ is a bias, and $\sigma$ is an activation function.</p>
+
+                    <h3 class="text-2xl font-semibold mt-6 mb-2">System 2 (The Symbolic Reasoner)</h3>
+                    <p>This is your slow, deliberate, and logical thinking. In AI, <strong>Symbolic AI</strong> is the master of System 2. It operates on rules and structured knowledge. A simple logical rule might be: $$\text{isBird}(x) \land \text{canFly}(x) \implies \text{hasWings}(x)$$ This is a hard-coded, explicit piece of knowledge.</p>
+                    
+                    <div class="interactive-zone p-6 rounded-lg my-8">
+                        <h4 class="text-xl font-bold text-cyan-400 mb-4">🧠 Interactive Zone: Test Your Systems!</h4>
+                        <div id="quizContainer"></div>
+                    </div>
+                </section>
+
+                <!-- PAGE 2 -->
+                <section id="page2" class="py-12">
+                    <h2 class="text-3xl font-bold border-b border-cyan-500 pb-2 mb-6">2. A Tale of Two Paradigms: A Brief History</h2>
+                    <p>The quest for Neural-Symbolic integration was born from the historical limitations of each approach on its own.</p>
+                    <div class="interactive-zone p-6 rounded-lg my-8">
+                        <h4 class="text-xl font-bold text-cyan-400 mb-4">🗺️ Interactive Zone: A Clickable Timeline</h4>
+                        <div id="timelineContainer" class="flex flex-wrap gap-4 justify-center"></div>
+                        <div id="timelineContent" class="mt-6 p-4 bg-gray-800 rounded-md min-h-[100px] transition-all duration-300">
+                            Select a decade to see key events.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 3 -->
+                <section id="page3" class="py-12">
+                    <h2 class="text-3xl font-bold border-b border-cyan-500 pb-2 mb-6">3. Why Bother? The Motivation for Integration</h2>
+                    <p>Why combine these two fields? Because each one solves a problem the other creates. The goal is an AI that learns from the world like a neural network, but reasons about what it has learned like a symbolic system.</p>
+                    <div class="overflow-x-auto my-8">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-800">
+                                    <th class="p-3 border border-gray-600">Pure Neural Networks (System 1)</th>
+                                    <th class="p-3 border border-gray-600">Pure Symbolic AI (System 2)</th>
+                                    <th class="p-3 border border-gray-600">Neural-Symbolic Goal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border border-gray-700"><td class="p-3">✅ Learns from data</td><td class="p-3">❌ Needs rules to be hand-coded</td><td class="p-3">Learn rules from data</td></tr>
+                                <tr class="border border-gray-700 bg-gray-800"><td class="p-3">✅ Robust to noisy input</td><td class="p-3">❌ Brittle; fails on unseen cases</td><td class="p-3">Generalize better from learned patterns</td></tr>
+                                <tr class="border border-gray-700"><td class="p-3">❌ Opaque "black box"</td><td class="p-3">✅ Interpretable and explainable</td><td class="p-3">Provide explanations for data-driven decisions</td></tr>
+                                <tr class="border border-gray-700 bg-gray-800"><td class="p-3">❌ Struggles with abstract reasoning</td><td class="p-3">✅ Excellent at logical deduction</td><td class="p-3">Reason about learned concepts abstractly</td></tr>
+                                <tr class="border border-gray-700"><td class="p-3">❌ Data-hungry</td><td class="p-3">✅ Can work with little to no data</td><td class="p-3">Learn effectively from fewer examples</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PAGE 4 -->
+                <section id="page4" class="py-12">
+                    <h2 class="text-3xl font-bold border-b border-cyan-500 pb-2 mb-6">4. Math Deep Dive I: Rotary Positional Embeddings (RoPE)</h2>
+                    <p>RoPE is an elegant solution for encoding word position in Transformers. Instead of adding a position vector, it rotates the feature vector by an angle dependent on its position.</p>
+                    <p>For a 2D vector $q$ at position $m$, the rotation is $q'_m = R_m q$, where $R_m = \begin{pmatrix} \cos(m\theta) & -\sin(m\theta) \\ \sin(m\theta) & \cos(m\theta) \end{pmatrix}$.</p>
+                    <p>The dot product between a query at position $m$ and a key at position $n$ becomes $(q'_m)^T (k'_n) = q^T R_{n-m} k$. This is the magic: the score depends only on the relative position $n-m$.</p>
+                     <div class="interactive-zone p-6 rounded-lg my-8">
+                        <h4 class="text-xl font-bold text-cyan-400 mb-4">💡 Interactive Zone: Vector Rotation</h4>
+                        <canvas id="ropeCanvas" class="w-full h-64 bg-gray-800 rounded-md"></canvas>
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="ropeSliderM" class="block mb-2">Query Position (m): <span id="ropeValueM">1</span></label>
+                                <input id="ropeSliderM" type="range" min="0" max="10" value="1" class="w-full">
+                            </div>
+                             <div>
+                                <label for="ropeSliderN" class="block mb-2">Key Position (n): <span id="ropeValueN">3</span></label>
+                                <input id="ropeSliderN" type="range" min="0" max="10" value="3" class="w-full">
+                            </div>
+                        </div>
+                        <div id="ropeDotProduct" class="mt-4 text-center font-mono p-2 bg-gray-900 rounded"></div>
+                    </div>
+                </section>
+
+                <!-- PAGE 5 -->
+                <section id="page5" class="py-12">
+                    <h2 class="text-3xl font-bold border-b border-cyan-500 pb-2 mb-6">5. RoPE in N-Dimensions & Code</h2>
+                    <p>To apply this to high-dimensional vectors, we group features into pairs and rotate each pair in its own 2D plane, often using complex numbers for an elegant formulation: $x'_{m,i} = x_i \cdot e^{j m\theta_i}$. The dot product still elegantly depends only on the relative distance $m-n$.</p>
+                     <div class="interactive-zone p-6 rounded-lg my-8">
+                        <h4 class="text-xl font-bold text-cyan-400 mb-4">💻 RoPE in Code</h4>
+                        <pre class="bg-gray-800 p-4 rounded-md overflow-x-auto text-sm"><code class="language-python">
+import numpy as np
+
+def get_rotary_embeddings(seq_len, dim):
+    inv_freq = 1.0 / (10000**(np.arange(0, dim, 2, dtype=np.float32) / dim))
+    t = np.arange(seq_len, dtype=np.float32)
+    freqs = np.outer(t, inv_freq)
+    return np.concatenate((freqs, freqs), axis=-1)
+
+def apply_rotary_pos_emb(x, freqs):
+    x_reshaped = x.reshape(*x.shape[:-1], -1, 2)
+    freqs_reshaped = freqs.reshape(*freqs.shape[:-1], -1, 2)
+    
+    x_real, x_imag = x_reshaped[..., 0], x_reshaped[..., 1]
+    cos_freqs = np.cos(freqs_reshaped[..., 0])
+    sin_freqs = np.sin(freqs_reshaped[..., 1])
+
+    rotated_real = x_real * cos_freqs - x_imag * sin_freqs
+    rotated_imag = x_real * sin_freqs + x_imag * cos_freqs
+    
+    return np.stack((rotated_real, rotated_imag), axis=-1).reshape(x.shape)
+                        </code></pre>
+                    </div>
+                </section>
+
+                <!-- PAGE 6 -->
+                <section id="page6" class="py-12">
+                    <h2 class="text-3xl font-bold border-b border-cyan-500 pb-2 mb-6">6. Math Deep Dive II: Hyperbolic Embeddings</h2>
+                    <p>Hyperbolic space has constant negative curvature and its volume grows exponentially, making it perfect for embedding hierarchies like trees. We often visualize it using a Poincaré disk, where the boundary is infinitely far from the center.</p>
+                    <p>The distance between two points $u$ and $v$ is given by: $$d(u, v) = \text{arccosh} \left( 1 + 2 \frac{\|u-v\|^2_2}{(1-\|u\|^2_2)(1-\|v\|^2_2)} \right)$$</p>
+                    <div class="interactive-zone p-6 rounded-lg my-8">
+                        <h4 class="text-xl font-bold text-cyan-400 mb-4">💡 Interactive Zone: Poincaré Disk Explorer</h4>
+                        <canvas id="poincareCanvas" class="w-full h-96 bg-gray-800 rounded-md cursor-pointer"></canvas>
+                         <div id="poincareDistances" class="mt-4 text-center font-mono p-2 bg-gray-900 rounded"></div>
+                    </div>
+                </section>
+                
+                <!-- PAGE 7 -->
+                <section id="page7" class="py-12">
+                    <h2 class="text-3xl font-bold border-b border-cyan-500 pb-2 mb-6">7. Neural Networks in Hyperbolic Space (HGCNs)</h2>
+                    <p>We can't use standard vector operations in hyperbolic space. Models like Hyperbolic Graph Convolutional Networks (HGCNs) use hyperbolic equivalents for addition ($\oplus_c$) and matrix multiplication ($\otimes_c$) to respect the space's geometry.</p>
+                     <div class="interactive-zone p-6 rounded-lg my-8">
+                        <h4 class="text-xl font-bold text-cyan-400 mb-4">🌳 Interactive Zone: Embedding a Tree</h4>
+                        <canvas id="treeCanvas" class="w-full h-96 bg-gray-800 rounded-md"></canvas>
+                        <div class="mt-4 flex justify-center gap-4">
+                            <button id="embedEuclideanBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded">Embed in Euclidean Space</button>
+                            <button id="embedHyperbolicBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Embed in Hyperbolic Space</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 8 -->
+                <section id="page8" class="py-12">
+                    <h2 class="text-3xl font-bold border-b border-cyan-500 pb-2 mb-6">8. Math Deep Dive III: Quaternions</h2>
+                    <p>Quaternions ($q = a + bi + cj + dk$) are a 4D extension of complex numbers. Their non-commutative multiplication ($ij = k, ji = -k$) makes them ideal for representing 3D rotations. In neural networks, they can holistically represent data like RGB color pixels, capturing relationships between channels.</p>
+                     <div class="interactive-zone p-6 rounded-lg my-8">
+                        <h4 class="text-xl font-bold text-cyan-400 mb-4">🌀 Interactive Zone: 3D Quaternion Rotator</h4>
+                        <div id="quaternionCanvasContainer" class="w-full h-96 bg-gray-800 rounded-md"></div>
+                        <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div><label for="qA">a (w): <span id="valA">1.0</span></label><input type="range" id="qA" min="-1" max="1" step="0.01" value="1" class="w-full"></div>
+                            <div><label for="qB">b (i): <span id="valB">0.0</span></label><input type="range" id="qB" min="-1" max="1" step="0.01" value="0" class="w-full"></div>
+                            <div><label for="qC">c (j): <span id="valC">0.0</span></label><input type="range" id="qC" min="-1" max="1" step="0.01" value="0" class="w-full"></div>
+                            <div><label for="qD">d (k): <span id="valD">0.0</span></label><input type="range" id="qD" min="-1" max="1" step="0.01" value="0" class="w-full"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 9 -->
+                <section id="page9" class="py-12">
+                    <h2 class="text-3xl font-bold border-b border-cyan-500 pb-2 mb-6">9. The Grand Synthesis - A Path to AGI?</h2>
+                    <p>How do these concepts fit together? They are all about creating richer, more structured representations of data. By using symbolic-aware spaces like hyperbolic geometry, we can bridge the gap between continuous neural representations and discrete symbolic logic, enabling a powerful feedback loop for reasoning and explainability.</p>
+                </section>
+
+                <!-- PAGE 10 -->
+                <section id="page10" class="py-12">
+                     <h2 class="text-3xl font-bold border-b border-cyan-500 pb-2 mb-6">10. Conclusion and Future Outlook</h2>
+                    <p>The future of robust, explainable AI likely lies in the integration of neural and symbolic approaches. The choice of mathematical space and representational tools is fundamental to a model's capabilities. While challenges remain, the Neural-Symbolic paradigm is one of the most promising pathways toward creating AI that is not only powerful but also understandable, adaptable, and aligned with human values.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+
+<script type="module">
+// Import three.js
+import * as THREE from 'three';
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Render math equations after the DOM is fully loaded
+    renderMathInElement(document.body);
+
+    // --- Page 1: Quiz ---
+    const quizContainer = document.getElementById('quizContainer');
+    const quizData = [
+        {
+            question: "You see a picture of a dog. What animal is it?",
+            system: "System 1",
+            answers: ["Dog", "Cat", "Bird"],
+            correct: "Dog",
+            explanation: "This is a fast, intuitive recognition task, perfect for System 1 (Neural Networks)."
+        },
+        {
+            question: "If all Zirps are Quogs, and Fido is a Zirp, is Fido a Quog?",
+            system: "System 2",
+            answers: ["Yes", "No", "Maybe"],
+            correct: "Yes",
+            explanation: "This requires applying a logical rule (transitivity), a classic System 2 (Symbolic AI) task."
+        }
+    ];
+    let currentQuestion = 0;
+
+    function loadQuiz() {
+        if (!quizContainer) return;
+        const q = quizData[currentQuestion];
+        quizContainer.innerHTML = `
+            <p class="mb-4">${q.question} (This task uses <strong>${q.system}</strong>)</p>
+            <div class="flex flex-col sm:flex-row gap-3">
+                ${q.answers.map(ans => `<button class="quiz-ans-btn bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded w-full">${ans}</button>`).join('')}
+            </div>
+            <div class="quiz-feedback mt-4 p-3 bg-gray-800 rounded-md hidden"></div>
+        `;
+        quizContainer.querySelectorAll('.quiz-ans-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const isCorrect = btn.textContent === q.correct;
+                const feedbackEl = quizContainer.querySelector('.quiz-feedback');
+                feedbackEl.innerHTML = isCorrect ? `✅ Correct! ${q.explanation}` : `❌ Incorrect. ${q.explanation}`;
+                feedbackEl.classList.remove('hidden');
+                feedbackEl.classList.toggle('text-green-400', isCorrect);
+                feedbackEl.classList.toggle('text-red-400', !isCorrect);
+                
+                // Load next question after a delay
+                setTimeout(() => {
+                    currentQuestion = (currentQuestion + 1) % quizData.length;
+                    loadQuiz();
+                }, 3000);
+            });
+        });
+    }
+    loadQuiz();
+
+    // --- Page 2: Timeline ---
+    const timelineContainer = document.getElementById('timelineContainer');
+    const timelineContent = document.getElementById('timelineContent');
+    const timelineData = {
+        "1960s": "<strong>Symbolic AI Dominates.</strong> Early AI research focused on logic and rules. Key developments include the LISP programming language and Shakey the robot, which navigated using logical planning.",
+        "1980s": "<strong>Connectionist Revival.</strong> Neural networks saw a resurgence with the popularization of the backpropagation algorithm, allowing networks to learn from data. This led to breakthroughs in character recognition.",
+        "2010s": "<strong>Deep Learning Explosion.</strong> AlexNet's victory in the ImageNet competition marked a turning point. Deep neural networks became state-of-the-art for many tasks, from image recognition to translation.",
+        "2020s": "<strong>Neuro-Symbolic Surge.</strong> Recognizing the limits of pure deep learning, major labs (IBM, MIT, Google) began heavily investing in hybrid approaches to combine learning and reasoning for more robust and explainable AI."
+    };
+    if (timelineContainer) {
+        Object.keys(timelineData).forEach(decade => {
+            const btn = document.createElement('button');
+            btn.className = "bg-gray-700 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded";
+            btn.textContent = decade;
+            btn.onclick = () => {
+                timelineContent.innerHTML = timelineData[decade];
+            };
+            timelineContainer.appendChild(btn);
+        });
+    }
+
+
+    // --- Page 4: RoPE Canvas ---
+    const ropeCanvas = document.getElementById('ropeCanvas');
+    if (ropeCanvas) {
+        const ropeCtx = ropeCanvas.getContext('2d');
+        const ropeSliderM = document.getElementById('ropeSliderM');
+        const ropeSliderN = document.getElementById('ropeSliderN');
+        const ropeValueM = document.getElementById('ropeValueM');
+        const ropeValueN = document.getElementById('ropeValueN');
+        const ropeDotProduct = document.getElementById('ropeDotProduct');
+        const ropeTheta = Math.PI / 12; // Base angle
+
+        function drawRoPE() {
+            const w = ropeCanvas.width = ropeCanvas.clientWidth;
+            const h = ropeCanvas.height = ropeCanvas.clientHeight;
+            const center = { x: w / 2, y: h / 2 };
+            const radius = Math.min(w, h) * 0.4;
+            const m = parseInt(ropeSliderM.value);
+            const n = parseInt(ropeSliderN.value);
+            ropeValueM.textContent = m;
+            ropeValueN.textContent = n;
+            
+            ropeCtx.clearRect(0, 0, w, h);
+            
+            // Draw grid
+            ropeCtx.strokeStyle = '#2d3748';
+            ropeCtx.beginPath();
+            ropeCtx.moveTo(0, center.y);
+            ropeCtx.lineTo(w, center.y);
+            ropeCtx.moveTo(center.x, 0);
+            ropeCtx.lineTo(center.x, h);
+            ropeCtx.stroke();
+            
+            const q_rot = { x: Math.cos(m * ropeTheta), y: Math.sin(m * ropeTheta) };
+            const k_rot = { x: Math.cos(n * ropeTheta), y: Math.sin(n * ropeTheta) };
+
+            // Draw rotated query vector (m)
+            ropeCtx.strokeStyle = '#63b3ed';
+            ropeCtx.fillStyle = '#63b3ed';
+            ropeCtx.lineWidth = 3;
+            ropeCtx.beginPath();
+            ropeCtx.moveTo(center.x, center.y);
+            ropeCtx.lineTo(center.x + q_rot.x * radius, center.y + q_rot.y * radius);
+            ropeCtx.stroke();
+            ropeCtx.fillText(`q (m=${m})`, center.x + q_rot.x * radius * 1.1, center.y + q_rot.y * radius * 1.1);
+
+            // Draw rotated key vector (n)
+            ropeCtx.strokeStyle = '#f6ad55';
+            ropeCtx.fillStyle = '#f6ad55';
+            ropeCtx.lineWidth = 3;
+            ropeCtx.beginPath();
+            ropeCtx.moveTo(center.x, center.y);
+            ropeCtx.lineTo(center.x + k_rot.x * radius, center.y + k_rot.y * radius);
+            ropeCtx.stroke();
+            ropeCtx.fillText(`k (n=${n})`, center.x + k_rot.x * radius * 1.1, center.y + k_rot.y * radius * 1.1);
+            
+            const dot = q_rot.x * k_rot.x + q_rot.y * k_rot.y;
+            const relative_dot = Math.cos((n-m)*ropeTheta);
+            
+            ropeDotProduct.innerHTML = `(q'_m)^T (k'_n) = cos(${m}θ)cos(${n}θ) + sin(${m}θ)sin(${n}θ) = ${dot.toFixed(3)}<br>
+            q^T R_{n-m} k = cos((${n}-${m})θ) = ${relative_dot.toFixed(3)}`;
+        }
+        ropeSliderM.oninput = drawRoPE;
+        ropeSliderN.oninput = drawRoPE;
+        drawRoPE();
+    }
+
+
+    // --- Page 6: Poincare Canvas ---
+    const poincareCanvas = document.getElementById('poincareCanvas');
+    if (poincareCanvas) {
+        const poincareCtx = poincareCanvas.getContext('2d');
+        const poincareDistances = document.getElementById('poincareDistances');
+        let poincarePoints = [{x: 0.2, y: 0.3}, {x: -0.4, y: -0.1}];
+        let draggingPoint = null;
+
+        function drawPoincare() {
+            const w = poincareCanvas.width = poincareCanvas.clientWidth;
+            const h = poincareCanvas.height = poincareCanvas.clientHeight;
+            const center = { x: w / 2, y: h / 2 };
+            const radius = Math.min(w, h) * 0.45;
+            poincareCtx.clearRect(0, 0, w, h);
+            
+            // Draw disk boundary
+            poincareCtx.strokeStyle = '#4a5568';
+            poincareCtx.lineWidth = 2;
+            poincareCtx.beginPath();
+            poincareCtx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+            poincareCtx.stroke();
+            
+            const [p1, p2] = poincarePoints;
+
+            function toScreen(p) { return { x: center.x + p.x * radius, y: center.y + p.y * radius }; }
+
+            const s1 = toScreen(p1);
+            const s2 = toScreen(p2);
+
+            // Draw line between points
+            poincareCtx.strokeStyle = '#a0aec0';
+            poincareCtx.lineWidth = 1;
+            poincareCtx.beginPath();
+            poincareCtx.moveTo(s1.x, s1.y);
+            poincareCtx.lineTo(s2.x, s2.y);
+            poincareCtx.stroke();
+
+            // Draw points
+            poincareCtx.fillStyle = '#63b3ed';
+            poincareCtx.beginPath();
+            poincareCtx.arc(s1.x, s1.y, 8, 0, 2*Math.PI);
+            poincareCtx.fill();
+            
+            poincareCtx.fillStyle = '#f6ad55';
+            poincareCtx.beginPath();
+            poincareCtx.arc(s2.x, s2.y, 8, 0, 2*Math.PI);
+            poincareCtx.fill();
+            
+            // Calculate distances
+            const euclid_dist_sq = (p1.x-p2.x)**2 + (p1.y-p2.y)**2;
+            const p1_norm_sq = p1.x**2 + p1.y**2;
+            const p2_norm_sq = p2.x**2 + p2.y**2;
+            
+            const denominator = (1 - p1_norm_sq) * (1 - p2_norm_sq);
+            let hyper_dist_text = "N/A (one point is on the boundary)";
+            if (denominator > 1e-9) {
+                 const hyper_dist = Math.acosh(1 + 2 * euclid_dist_sq / denominator);
+                 hyper_dist_text = hyper_dist.toFixed(3);
+            }
+            
+            poincareDistances.innerHTML = `Euclidean Distance: ${Math.sqrt(euclid_dist_sq).toFixed(3)} | Hyperbolic Distance: ${hyper_dist_text}`;
+        }
+        poincareCanvas.addEventListener('mousedown', (e) => {
+            const rect = poincareCanvas.getBoundingClientRect();
+            const center = { x: poincareCanvas.width / 2, y: poincareCanvas.height / 2 };
+            const radius = Math.min(poincareCanvas.width, poincareCanvas.height) * 0.45;
+            const clickPos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            
+            poincarePoints.forEach((p, i) => {
+                const s = { x: center.x + p.x * radius, y: center.y + p.y * radius };
+                if (Math.hypot(s.x - clickPos.x, s.y - clickPos.y) < 10) {
+                    draggingPoint = i;
+                }
+            });
+        });
+        poincareCanvas.addEventListener('mousemove', (e) => {
+            if (draggingPoint === null) return;
+            const rect = poincareCanvas.getBoundingClientRect();
+            const center = { x: poincareCanvas.width / 2, y: poincareCanvas.height / 2 };
+            const radius = Math.min(poincareCanvas.width, poincareCanvas.height) * 0.45;
+            const movePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+            let diskX = (movePos.x - center.x) / radius;
+            let diskY = (movePos.y - center.y) / radius;
+            const norm = Math.hypot(diskX, diskY);
+            if (norm >= 1) { // Prevent dragging outside the disk
+                diskX /= (norm + 1e-6);
+                diskY /= (norm + 1e-6);
+            }
+
+            poincarePoints[draggingPoint] = { x: diskX, y: diskY };
+            drawPoincare();
+        });
+        poincareCanvas.addEventListener('mouseup', () => { draggingPoint = null; });
+        poincareCanvas.addEventListener('mouseleave', () => { draggingPoint = null; });
+        drawPoincare();
+    }
+
+
+    // --- Page 7: Tree Embedding ---
+    const treeCanvas = document.getElementById('treeCanvas');
+    if (treeCanvas) {
+        const treeCtx = treeCanvas.getContext('2d');
+        const embedEuclideanBtn = document.getElementById('embedEuclideanBtn');
+        const embedHyperbolicBtn = document.getElementById('embedHyperbolicBtn');
+        
+        const treeData = {
+            id: 'root',
+            children: [
+                { id: 'a', children: [{ id: 'c', children: [] }, { id: 'd', children: [] }] },
+                { id: 'b', children: [{ id: 'e', children: [] }, { id: 'f', children: [] }] }
+            ]
+        };
+        
+        function drawNode(ctx, pos, label) {
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillText(label, pos.x + 8, pos.y + 4);
+        }
+
+        function drawLine(ctx, p1, p2) {
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+
+        function drawTreeEuclidean() {
+            const w = treeCanvas.width = treeCanvas.clientWidth;
+            const h = treeCanvas.height = treeCanvas.clientHeight;
+            treeCtx.clearRect(0,0,w,h);
+            treeCtx.fillStyle = '#fff';
+            treeCtx.strokeStyle = '#a0aec0';
+            
+            function traverse(node, x, y, x_offset) {
+                const pos = {x, y};
+                drawNode(treeCtx, pos, node.id);
+                let child_x = x - x_offset/2;
+                node.children.forEach(child => {
+                    const childPos = {x: child_x, y: y + 70};
+                    drawLine(treeCtx, pos, childPos);
+                    traverse(child, childPos.x, childPos.y, x_offset/2);
+                    child_x += x_offset;
+                });
+            }
+            traverse(treeData, w/2, 50, w/2);
+        }
+        
+        function drawTreeHyperbolic() {
+            const w = treeCanvas.width = treeCanvas.clientWidth;
+            const h = treeCanvas.height = treeCanvas.clientHeight;
+            const center = { x: w / 2, y: h / 2 };
+            const diskRadius = Math.min(w, h) * 0.45;
+            treeCtx.clearRect(0,0,w,h);
+            treeCtx.fillStyle = '#fff';
+            treeCtx.strokeStyle = '#a0aec0';
+
+            // Draw disk boundary
+            treeCtx.beginPath();
+            treeCtx.arc(center.x, center.y, diskRadius, 0, 2 * Math.PI);
+            treeCtx.stroke();
+            
+            function toScreen(r, theta) {
+                return {
+                    x: center.x + r * diskRadius * Math.cos(theta),
+                    y: center.y + r * diskRadius * Math.sin(theta)
+                };
+            }
+
+            function traverse(node, r, theta_start, theta_end) {
+                const theta = (theta_start + theta_end) / 2;
+                const pos = toScreen(r, theta);
+                drawNode(treeCtx, pos, node.id);
+                
+                if (node.children.length > 0) {
+                    const child_r = r + (1 - r) * 0.5; // Move halfway to the edge
+                    const angle_span = theta_end - theta_start;
+                    let current_theta = theta_start;
+                    node.children.forEach(child => {
+                        const child_angle_span = angle_span / node.children.length;
+                        const child_theta = (current_theta + current_theta + child_angle_span) / 2;
+                        const childPos = toScreen(child_r, child_theta);
+                        drawLine(treeCtx, pos, childPos);
+                        traverse(child, child_r, current_theta, current_theta + child_angle_span);
+                        current_theta += child_angle_span;
+                    });
+                }
+            }
+            traverse(treeData, 0, 0, 2*Math.PI);
+        }
+
+        embedEuclideanBtn.onclick = drawTreeEuclidean;
+        embedHyperbolicBtn.onclick = drawTreeHyperbolic;
+        drawTreeEuclidean(); // Start with Euclidean view
+    }
+
+
+    // --- Page 8: Quaternion Rotator ---
+    const qContainer = document.getElementById('quaternionCanvasContainer');
+    if (qContainer) {
+        let qScene, qCamera, qRenderer, qCube;
+
+        function initQuaternionScene() {
+            qScene = new THREE.Scene();
+            qScene.background = new THREE.Color(0x1a202c);
+
+            const width = qContainer.clientWidth;
+            const height = qContainer.clientHeight;
+            qCamera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+            qCamera.position.z = 2.5;
+
+            qRenderer = new THREE.WebGLRenderer({ antialias: true });
+            qRenderer.setSize(width, height);
+            qContainer.appendChild(qRenderer.domElement);
+
+            const geometry = new THREE.BoxGeometry(1, 1, 1.25);
+            const material = new THREE.MeshStandardMaterial({ color: 0x00bcd4, metalness: 0.5, roughness: 0.5 });
+            qCube = new THREE.Mesh(geometry, material);
+            qScene.add(qCube);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            qScene.add(ambientLight);
+            const pointLight = new THREE.PointLight(0xffffff, 0.8);
+            pointLight.position.set(2, 3, 4);
+            qScene.add(pointLight);
+
+            animateQuaternion();
+        }
+
+        function animateQuaternion() {
+            requestAnimationFrame(animateQuaternion);
+            qRenderer.render(qScene, qCamera);
+        }
+        
+        function updateQuaternionRotation() {
+            const a = parseFloat(document.getElementById('qA').value);
+            const b = parseFloat(document.getElementById('qB').value);
+            const c = parseFloat(document.getElementById('qC').value);
+            const d = parseFloat(document.getElementById('qD').value);
+            
+            document.getElementById('valA').textContent = a.toFixed(2);
+            document.getElementById('valB').textContent = b.toFixed(2);
+            document.getElementById('valC').textContent = c.toFixed(2);
+            document.getElementById('valD').textContent = d.toFixed(2);
+
+            const quaternion = new THREE.Quaternion(b, c, d, a).normalize();
+            qCube.setRotationFromQuaternion(quaternion);
+        }
+
+        ['qA', 'qB', 'qC', 'qD'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateQuaternionRotation);
+        });
+
+        initQuaternionScene();
+        updateQuaternionRotation();
+    }
+    
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+        if(document.getElementById('ropeCanvas')) document.getElementById('ropeSliderM').dispatchEvent(new Event('input'));
+        if(document.getElementById('poincareCanvas')) poincareCanvas.dispatchEvent(new Event('mousedown')); // trick to redraw
+        if(document.getElementById('treeCanvas')) document.getElementById('embedEuclideanBtn').click(); // Redraw current tree view
+
+        // Resize three.js canvas
+        const qContainer = document.getElementById('quaternionCanvasContainer');
+        if (qContainer && qContainer.qCamera && qContainer.qRenderer) {
+            const width = qContainer.clientWidth;
+            const height = qContainer.clientHeight;
+            qContainer.qCamera.aspect = width / height;
+            qContainer.qCamera.updateProjectionMatrix();
+            qContainer.qRenderer.setSize(width, height);
+        }
+    });
+
+});
+</script>
+
+</body>
+</html>
