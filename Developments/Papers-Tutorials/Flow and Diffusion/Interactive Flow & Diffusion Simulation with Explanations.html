@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Flow & Diffusion Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior: none;
+        }
+        .control-panel-bg {
+            background-color: rgba(249, 250, 251, 0.9);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .btn-active {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .btn-inactive {
+            background-color: white;
+            color: #374151; /* gray-700 */
+            border: 1px solid #d1d5db; /* gray-300 */
+        }
+        canvas {
+            cursor: crosshair;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            border: 1px solid #e5e7eb; /* gray-200 */
+        }
+        .tab-btn-active {
+            border-bottom: 2px solid #3b82f6;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .tab-btn-inactive {
+            border-bottom: 2px solid transparent;
+            color: #6b7280;
+        }
+        .explanation-step {
+            transition: all 0.3s ease-in-out;
+            border-left: 4px solid transparent;
+        }
+        .explanation-step.highlight {
+            background-color: #eff6ff; /* blue-50 */
+            border-left: 4px solid #3b82f6; /* blue-500 */
+            transform: scale(1.02);
+        }
+        .katex-display { 
+            display: block; 
+            overflow-x: auto; 
+            overflow-y: hidden;
+            padding: 0.5em 0;
+        }
+        /* Styles for the new Concepts tab */
+        #conceptsContent .concept-section {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+         #conceptsContent h4 {
+            color: #111827;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0KOVEMeaCssLdsfunD2DS2PB10KIXJWcMYh29VvrNeIIyCbLrwfVb" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" xintegrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 flex flex-col items-center justify-center min-h-screen p-4 antialiased">
+
+    <div class="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="text-center p-6 bg-white border-b border-gray-200">
+            <h1 class="text-3xl font-bold text-gray-900">Flow & Diffusion Simulation</h1>
+            <p class="text-gray-600 mt-1">Visualize how noise transforms into data using ODEs and SDEs.</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="border-b border-gray-200 px-6">
+            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                <button id="simTabBtn" class="py-4 px-1 text-sm font-medium transition-colors duration-200 tab-btn-active">Simulation</button>
+                <button id="expTabBtn" class="py-4 px-1 text-sm font-medium transition-colors duration-200 tab-btn-inactive">Explanation</button>
+                <button id="conTabBtn" class="py-4 px-1 text-sm font-medium transition-colors duration-200 tab-btn-inactive">Concepts</button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="p-6">
+            <!-- Simulation Content -->
+            <div id="simulationContent">
+                <div class="relative">
+                    <canvas id="simulationCanvas"></canvas>
+                    <div id="message-box" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
+                        <p id="message-text" class="text-lg font-semibold text-gray-800"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Explanation Content -->
+            <div id="explanationContent" class="hidden">
+                <div id="ode-explanation" class="prose max-w-none">
+                    <h3>Method 1: Flow Matching (The ODE Approach)</h3>
+                    <p>The goal is to learn a <strong>deterministic transformation</strong> from noise to data. A neural network learns a vector field `u_t` that defines the exact path for each particle, governed by an Ordinary Differential Equation (ODE).</p>
+                    <div class="explanation-step p-4 rounded-lg my-2" id="ode-step-1">
+                        <h4>Phase 1: Sample `(z, ε, t)`</h4>
+                        <p>Pick a data point `z`, a noise sample `ε`, and a random time `t` to create one training example.</p>
+                    </div>
+                    <div class="explanation-step p-4 rounded-lg my-2" id="ode-step-2">
+                        <h4>Phase 2: Create Training Point `x_t`</h4>
+                        <p>Form a noisy sample by interpolating: `x_t = \alpha_t z + \beta_t \epsilon`. This point lies on the direct path between the noise and the data point.</p>
+                    </div>
+                     <div class="explanation-step p-4 rounded-lg my-2" id="ode-step-3">
+                        <h4>Phase 3: Compute Ground Truth `u_t(x_t|z)`</h4>
+                        <p>Calculate the "correct" velocity vector using the analytical formula for the conditional vector field, which is tractable.</p>
+                        <div class="math-formula">$$ u_t^{\text{target}}(x|z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t}\alpha_t)z + \frac{\dot{\beta}_t}{\beta_t}x $$</div>
+                    </div>
+                    <div class="explanation-step p-4 rounded-lg my-2" id="ode-step-4">
+                        <h4>Phase 4: Calculate Loss & Update</h4>
+                        <p>The network `u_t^θ` predicts a velocity. The loss is the Mean Squared Error between the prediction and the ground truth. This loss is used to update the network.</p>
+                        <div class="math-formula">$$ \mathcal{L}_{CFM}(\theta) = ||u_t^{\theta}(x_t) - u_t^{\text{target}}(x_t|z)||^2 $$</div>
+                    </div>
+                </div>
+                <div id="sde-explanation" class="hidden prose max-w-none">
+                     <h3>Method 2: Diffusion & Score Matching (The SDE Approach)</h3>
+                    <p>The goal is to learn a <strong>stochastic transformation</strong>. Particles are guided by a vector field but also continuously "jostled" by random noise. This process is governed by a Stochastic Differential Equation (SDE).</p>
+                     <div class="explanation-step p-4 rounded-lg my-2" id="sde-step-1">
+                        <h4>Phase 1: Sample `(z, ε, t)`</h4>
+                        <p>The setup is the same: pick a data point `z`, a noise sample `ε`, and a random time `t`.</p>
+                    </div>
+                    <div class="explanation-step p-4 rounded-lg my-2" id="sde-step-2">
+                        <h4>Phase 2: Create Training Point `x_t`</h4>
+                        <p>The noisy sample is also created in the same way: `x_t = \alpha_t z + \beta_t \epsilon`.</p>
+                    </div>
+                     <div class="explanation-step p-4 rounded-lg my-2" id="sde-step-3">
+                        <h4>Phase 3: Compute Ground Truth `∇ log p_t(x_t|z)`</h4>
+                        <p>For SDEs, we also need the <strong>score function</strong>, which points towards areas of higher probability. We compute the tractable conditional score:</p>
+                        <div class="math-formula">$$ \nabla \log p_t(x|z) = -\frac{x - \alpha_t z}{\beta_t^2} $$</div>
+                    </div>
+                    <div class="explanation-step p-4 rounded-lg my-2" id="sde-step-4">
+                        <h4>Phase 4: Calculate Loss & Update</h4>
+                        <p>A score network `s_t^θ` predicts the score. The loss is the MSE between the predicted score and the ground truth score.</p>
+                        <div class="math-formula">$$ \mathcal{L}_{CSM}(\theta) = ||s_t^{\theta}(x_t) - \nabla \log p_t(x_t|z)||^2 $$</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Concepts Content -->
+            <div id="conceptsContent" class="hidden prose max-w-none">
+                 <div class="concept-section">
+                    <h4>What is `p_data` and why does its shape matter?</h4>
+                    <p><code>p_data</code> represents the "data distribution" — the underlying probability of all possible valid data points. In our 2D simulation, the data points are simple (x, y) coordinates arranged in a shape like a star or a circle. This arrangement defines the structure of the data space.</p>
+                    <p>The shape of <code>p_data</code> directly determines the vector field `u_t`. The field's purpose is to "push" random points from the center towards the areas where data is dense.
+                    <ul>
+                        <li>For a <strong>Circle</strong>, the vector field will point radially outwards.</li>
+                        <li>For a <strong>Star</strong>, the field will point outwards along the arms of the star.</li>
+                        <li>For the <strong>Checkerboard</strong>, the field is complex, pushing points towards multiple distinct clusters.</li>
+                    </ul>
+                    The learned vector field is essentially a compressed map of the data distribution's geometry.
+                    </p>
+                </div>
+                <div class="concept-section">
+                    <h4>Application to Images: Whole Image or Pixel by Pixel?</h4>
+                    <p>This is a critical point: the process operates on the <strong>entire image at once</strong>. An image is not treated as a collection of independent pixels, but as a single, high-dimensional vector `z`.</p>
+                    <p>
+                    If an image is 128x128 pixels with 3 color channels (RGB), it's represented as a single vector in `R^(128*128*3)`, which has 49,152 dimensions. The noise `ε` is also a vector of this same dimension. The neural network then learns a vector field `u_t` in this 49,152-dimensional space.
+                    </p>
+                    <p>The network's architecture (like a U-Net) is designed to understand the spatial relationships between pixels. It doesn't just learn "this pixel should be red," but rather "given the entire noisy image, the collective velocity vector for all 49,152 values should be *this*, in order to make the image slightly less noisy and more coherent." This holistic approach is what allows the model to generate globally consistent structures, not just random pixels.
+                    </p>
+                </div>
+                 <div class="concept-section">
+                    <h4>High-Level Python & ML Implementation</h4>
+                    <p>In a real-world project, you would use a machine learning framework like PyTorch or TensorFlow. Here’s a conceptual overview:</p>
+                    <p><strong>1. The Dataset:</strong> You'd use a `DataLoader` to feed batches of images (`z`) from a large dataset (e.g., ImageNet, LAION).</p>
+                    <p><strong>2. The Model (`u_t^θ`):</strong> This wouldn't be a simple function but a large neural network, typically a **U-Net** or a **Transformer**. These architectures are excellent at processing image-like data because they preserve spatial information.
+                        <ul class="list-disc pl-5">
+                            <li>The network takes a batch of noisy images `x_t` and a batch of time values `t` as input.</li>
+                            <li>It outputs a batch of vectors (the predicted velocities or scores) of the same dimension as the input images.</li>
+                        </ul>
+                    </p>
+                    <p><strong>3. The Training Loop:</strong> Inside the training loop, for each batch of images `z`:
+                    <pre class="bg-gray-800 text-white p-3 rounded-md text-sm"><code># Conceptual Python (PyTorch-like)
+t = torch.rand(batch_size, 1, 1, 1) # Sample random times
+noise = torch.randn_like(z)        # Sample Gaussian noise
+
+# Form noisy images (x_t)
+x_t = alpha(t) * z + beta(t) * noise 
+
+# Calculate ground truth target (e.g., for Flow Matching)
+target = (alpha_dot(t) - (beta_dot(t) / beta(t)) * alpha(t)) * z + (beta_dot(t) / beta(t)) * x_t
+
+# Get model prediction and compute loss
+prediction = model(x_t, t)
+loss = torch.nn.functional.mse_loss(prediction, target)
+
+# Backpropagation
+loss.backward()
+optimizer.step()
+optimizer.zero_grad()</code></pre>
+                    </p>
+                    <p>This loop is repeated for many epochs until the loss converges, meaning the model has learned the vector field of the data distribution.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="p-4 border-t border-gray-200 control-panel-bg">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                <div class="space-y-3">
+                    <label for="timeSlider" class="font-semibold text-gray-700 block">Time (t): <span id="timeValue" class="font-bold text-blue-600">0.50</span></label>
+                    <input type="range" id="timeSlider" min="0" max="1" step="0.01" value="0.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+                <div class="flex flex-col space-y-3 items-center">
+                    <div class="flex space-x-2">
+                         <button id="flowBtn" class="px-4 py-2 rounded-lg font-semibold transition-all duration-200 btn-active">Flow (ODE)</button>
+                         <button id="diffusionBtn" class="px-4 py-2 rounded-lg font-semibold transition-all duration-200 btn-inactive">Diffusion (SDE)</button>
+                    </div>
+                     <button id="simulateBtn" class="w-full px-6 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition-all duration-200 shadow-md">
+                        ▶ Simulate Transformation
+                    </button>
+                </div>
+                <div class="space-y-3">
+                    <label for="dataSelector" class="font-semibold text-gray-700 block">Target Data (`p_data`)</label>
+                    <select id="dataSelector" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="checkerboard">Checkerboard</option>
+                        <option value="star">Star</option>
+                        <option value="circle">Circle</option>
+                        <option value="two_moons">Two Moons</option>
+                    </select>
+                     <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="vectorFieldCheckbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <label for="vectorFieldCheckbox" class="text-sm text-gray-600">Show Vector Field</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const canvas = document.getElementById('simulationCanvas');
+        const ctx = canvas.getContext('2d');
+        const timeSlider = document.getElementById('timeSlider');
+        const timeValue = document.getElementById('timeValue');
+        const simulateBtn = document.getElementById('simulateBtn');
+        const flowBtn = document.getElementById('flowBtn');
+        const diffusionBtn = document.getElementById('diffusionBtn');
+        const dataSelector = document.getElementById('dataSelector');
+        const vectorFieldCheckbox = document.getElementById('vectorFieldCheckbox');
+        const simTabBtn = document.getElementById('simTabBtn');
+        const expTabBtn = document.getElementById('expTabBtn');
+        const conTabBtn = document.getElementById('conTabBtn');
+        const simulationContent = document.getElementById('simulationContent');
+        const explanationContent = document.getElementById('explanationContent');
+        const conceptsContent = document.getElementById('conceptsContent');
+        const odeExplanation = document.getElementById('ode-explanation');
+        const sdeExplanation = document.getElementById('sde-explanation');
+        
+        let particles = [], dataPoints = [];
+        const numParticles = 300, numDataPoints = 300;
+        let mode = 'ode', isSimulating = false;
+
+        // --- Math & Simulation Logic (minified for brevity) ---
+        function gaussianRandom() { let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random(); return Math.sqrt(-2.0*Math.log(u))*Math.cos(2.0*Math.PI*v); }
+        const alpha = t => t, beta = t => 1-t;
+        const alpha_dot = t => 1, beta_dot = t => -1;
+        function getConditionalVectorField(x,y,z_x,z_y,t) { if(t>=1.0)return{vx:0,vy:0}; const b_t=beta(t),a_t=alpha(t),b_dot_t=beta_dot(t),a_dot_t=alpha_dot(t); if(Math.abs(b_t)<1e-6)return{vx:(z_x-x),vy:(z_y-y)}; const term1=a_dot_t-(b_dot_t/b_t)*a_t, term2=b_dot_t/b_t; return{vx:term1*z_x+term2*x, vy:term1*z_y+term2*y}; }
+        function getConditionalScore(x,y,z_x,z_y,t) { if(t>=1.0)return{sx:0,sy:0}; const b_t_sq=Math.pow(beta(t),2); if(b_t_sq<1e-6)return{sx:0,sy:0}; const a_t=alpha(t); return{sx:-(x-a_t*z_x)/b_t_sq, sy:-(y-a_t*z_y)/b_t_sq}; }
+        function getMarginalVectorField(x, y, t) { let Tvx=0,Tvy=0,Tw=0; dataPoints.forEach(z=>{ const d_sq=Math.pow(x-alpha(t)*z.x,2)+Math.pow(y-alpha(t)*z.y,2),b_t_sq=Math.pow(beta(t),2),w=Math.exp(-d_sq/(2*b_t_sq+1e-9)),{vx,vy}=getConditionalVectorField(x,y,z.x,z.y,t); Tvx+=vx*w;Tvy+=vy*w;Tw+=w; }); if(Tw<1e-9)return{vx:0,vy:0}; return{vx:Tvx/Tw,vy:Tvy/Tw}; }
+        function getMarginalScore(x, y, t) { let Tsx=0,Tsy=0,Tw=0; dataPoints.forEach(z=>{ const d_sq=Math.pow(x-alpha(t)*z.x,2)+Math.pow(y-alpha(t)*z.y,2),b_t_sq=Math.pow(beta(t),2),w=Math.exp(-d_sq/(2*b_t_sq+1e-9)),{sx,sy}=getConditionalScore(x,y,z.x,z.y,t); Tsx+=sx*w;Tsy+=sy*w;Tw+=w; }); if(Tw<1e-9)return{sx:0,sy:0}; return{sx:Tsx/Tw,sy:Tsy/Tw}; }
+        const dataDistributions = {
+            checkerboard:()=>{const p=[],n=Math.floor(numDataPoints/9);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)if((i+j)%2===0)for(let k=0;k<n;k++)p.push({x:i*0.6+(Math.random()-0.5)*0.2,y:j*0.6+(Math.random()-0.5)*0.2});return p;},
+            star:()=>{const p=[],a=5,n=Math.floor(numDataPoints/a);for(let i=0;i<a;i++){const ang=(i/a)*2*Math.PI;for(let j=0;j<n;j++){const r=0.3+Math.random()*0.6,s=Math.pow(Math.random(),2)*0.2;p.push({x:r*Math.cos(ang)+(Math.random()-0.5)*s,y:r*Math.sin(ang)+(Math.random()-0.5)*s})}}return p;},
+            circle:()=>{const p=[];for(let i=0;i<numDataPoints;i++){const a=Math.random()*2*Math.PI,r=0.8+(Math.random()-0.5)*0.1;p.push({x:r*Math.cos(a),y:r*Math.sin(a)})}return p;},
+            two_moons:()=>{const p=[],n=Math.floor(numDataPoints/2);for(let i=0;i<n;i++){const a=(i/n)*Math.PI;p.push({x:0.8*Math.cos(a)+(Math.random()-0.5)*0.1,y:0.8*Math.sin(a)+(Math.random()-0.5)*0.1});p.push({x:0.8*Math.cos(-a)+0.8+(Math.random()-0.5)*0.1,y:0.8*Math.sin(-a)-0.4+(Math.random()-0.5)*0.1})}return p;}
+        };
+        
+        // --- UI & Drawing ---
+        function highlightStep(stepId) { document.querySelectorAll('.explanation-step').forEach(el => el.classList.remove('highlight')); if (stepId) document.getElementById(stepId).classList.add('highlight'); }
+        function resizeCanvas() { const s=Math.min(simulationContent.clientWidth,window.innerHeight*0.5); canvas.width=s; canvas.height=s; draw(); }
+        window.addEventListener('resize', resizeCanvas);
+
+        function init() {
+            highlightStep(mode === 'ode' ? 'ode-step-1' : 'sde-step-1');
+            dataPoints = dataDistributions[dataSelector.value]();
+            particles = [];
+            if (dataPoints.length === 0) return;
+            for (let i = 0; i < numParticles; i++) { particles.push({ x: gaussianRandom()*0.1, y: gaussianRandom()*0.1, z: dataPoints[i % dataPoints.length] }); }
+            isSimulating = false;
+            timeSlider.value = 0;
+            timeValue.innerText = (0).toFixed(2);
+            resizeCanvas();
+            setTimeout(() => highlightStep(null), 500);
+        }
+
+        function draw() {
+            ctx.fillStyle='#f9fafb'; ctx.fillRect(0,0,canvas.width,canvas.height); const t=parseFloat(timeSlider.value); ctx.save(); ctx.translate(canvas.width/2,canvas.height/2); const scale=canvas.width/2.5; ctx.scale(scale,scale);
+            ctx.fillStyle='rgba(120,150,255,0.15)'; dataPoints.forEach(p=>{ctx.beginPath(); ctx.arc(p.x,p.y,0.03,0,2*Math.PI); ctx.fill();});
+            const r=239*(1-t)+59*t, g=68*(1-t)+130*t, b=68*(1-t)+246*t; ctx.fillStyle=`rgba(${r},${g},${b},0.8)`;
+            particles.forEach(p=>{ let x,y; if(isSimulating){x=p.x;y=p.y;}else{ if(!p.z)return; x=alpha(t)*p.z.x+beta(t)*p.x; y=alpha(t)*p.z.y+beta(t)*p.y; } ctx.beginPath();ctx.arc(x,y,0.015,0,2*Math.PI);ctx.fill(); });
+            if(vectorFieldCheckbox.checked) drawVectorField(t);
+            ctx.restore();
+        }
+        function drawVectorField(t){ const G=15,S=2/G; ctx.strokeStyle='rgba(0,0,0,0.3)'; ctx.lineWidth=1/(canvas.width/2.5); for(let i=-1;i<=1;i+=S)for(let j=-1;j<=1;j+=S){ let F; if(mode==='ode'){F=getMarginalVectorField(i,j,t);}else{const u=getMarginalVectorField(i,j,t),s=getMarginalScore(i,j,t),sq=0.01;F={vx:u.vx+(sq/2)*s.sx,vy:u.vy+(sq/2)*s.sy};} const M=Math.sqrt(F.vx*F.vx+F.vy*F.vy); if(M>1e-4){const f=0.05/M,eX=i+F.vx*f,eY=j+F.vy*f,a=Math.atan2(eY-j,eX-i); ctx.beginPath();ctx.moveTo(i,j);ctx.lineTo(eX,eY);ctx.stroke(); ctx.beginPath();ctx.moveTo(eX,eY);ctx.lineTo(eX-0.02*Math.cos(a-Math.PI/6),eY-0.02*Math.sin(a-Math.PI/6));ctx.moveTo(eX,eY);ctx.lineTo(eX-0.02*Math.cos(a+Math.PI/6),eY-0.02*Math.sin(a+Math.PI/6));ctx.stroke();}}}
+        function runSimulation() {
+            if(isSimulating) return; isSimulating=true; const msgBox=document.getElementById('message-box'),msgTxt=document.getElementById('message-text'); msgTxt.textContent='Simulating...'; msgBox.classList.remove('hidden');
+            particles.forEach(p=>{p.x=gaussianRandom()*0.1;p.y=gaussianRandom()*0.1;});
+            let t=0, N=100, h=1.0/N, sigma=0.3;
+            function step(){
+                if(t>=1.0){ isSimulating=false; msgTxt.textContent='Done!'; setTimeout(()=>msgBox.classList.add('hidden'),1000); highlightStep(null); draw(); return; }
+                highlightStep(mode==='ode'?'ode-step-4':'sde-step-4');
+                particles.forEach(p=>{ const u=getMarginalVectorField(p.x,p.y,t); if(mode==='ode'){p.x+=h*u.vx;p.y+=h*u.vy;}else{const s=getMarginalScore(p.x,p.y,t),sq=Math.pow(sigma*(1-t),2),dx=u.vx+(sq/2)*s.sx,dy=u.vy+(sq/2)*s.sy,diff_x=Math.sqrt(h)*Math.sqrt(sq)*gaussianRandom(),diff_y=Math.sqrt(h)*Math.sqrt(sq)*gaussianRandom();p.x+=h*dx+diff_x;p.y+=h*dy+diff_y;}});
+                t+=h; timeSlider.value=t; timeValue.innerText=t.toFixed(2); draw(); requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        // --- Event Listeners ---
+        function setActiveTab(button) {
+            [simTabBtn, expTabBtn, conTabBtn].forEach(btn => {
+                btn.classList.replace('tab-btn-active', 'tab-btn-inactive');
+            });
+            button.classList.replace('tab-btn-inactive', 'tab-btn-active');
+        }
+
+        simTabBtn.addEventListener('click', () => {
+            setActiveTab(simTabBtn);
+            simulationContent.classList.remove('hidden');
+            explanationContent.classList.add('hidden');
+            conceptsContent.classList.add('hidden');
+            resizeCanvas();
+        });
+
+        expTabBtn.addEventListener('click', () => {
+            setActiveTab(expTabBtn);
+            simulationContent.classList.add('hidden');
+            explanationContent.classList.remove('hidden');
+            conceptsContent.classList.add('hidden');
+            if (window.renderMathInElement) renderMathInElement(explanationContent, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});
+        });
+
+        conTabBtn.addEventListener('click', () => {
+            setActiveTab(conTabBtn);
+            simulationContent.classList.add('hidden');
+            explanationContent.classList.add('hidden');
+            conceptsContent.classList.remove('hidden');
+        });
+
+        timeSlider.addEventListener('input', e => {
+            if(isSimulating){ e.target.value=parseFloat(timeValue.innerText); return; }
+            timeValue.innerText = parseFloat(e.target.value).toFixed(2);
+            highlightStep(mode === 'ode' ? 'ode-step-2' : 'sde-step-2');
+            draw();
+            setTimeout(() => highlightStep(null), 500);
+        });
+
+        function switchMode(newMode) {
+            mode = newMode;
+            if (mode === 'ode') {
+                flowBtn.classList.replace('btn-inactive', 'btn-active');
+                diffusionBtn.classList.replace('btn-active', 'btn-inactive');
+                odeExplanation.classList.remove('hidden');
+                sdeExplanation.classList.add('hidden');
+            } else {
+                diffusionBtn.classList.replace('btn-inactive', 'btn-active');
+                flowBtn.classList.replace('btn-active', 'btn-inactive');
+                odeExplanation.classList.add('hidden');
+                sdeExplanation.classList.remove('hidden');
+            }
+            if(window.renderMathInElement) renderMathInElement(explanationContent, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});
+            draw();
+        }
+
+        flowBtn.addEventListener('click', () => switchMode('ode'));
+        diffusionBtn.addEventListener('click', () => switchMode('sde'));
+        simulateBtn.addEventListener('click', runSimulation);
+        dataSelector.addEventListener('change', init);
+        vectorFieldCheckbox.addEventListener('change', draw);
+        
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Remove integrity checks for local/sandboxed environments
+            document.querySelectorAll('link[xintegrity], script[xintegrity]').forEach(el => {
+                el.removeAttribute('integrity');
+            });
+            init();
+            switchMode('ode'); // Start in ODE mode
+        });
+    </script>
+</body>
+</html>
