@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Interactive Guide to the Fokker-Planck Equation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        MathJax = {
+          tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']]
+          },
+          svg: {
+            fontCache: 'global'
+          }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1f2937;
+        }
+        .content-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            margin-bottom: 2rem;
+            padding: 2rem;
+        }
+        h1, h2, h3 {
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+        h1 {
+            font-size: 2.5rem;
+            line-height: 1.2;
+        }
+        h2 {
+            font-size: 1.875rem;
+            line-height: 1.25;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        p {
+            line-height: 1.75;
+            margin-bottom: 1.5rem;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #d1d5db;
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4f46e5;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .simulation-container {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            background-color: #f9fafb;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="max-w-4xl mx-auto p-4 md:p-8">
+
+        <header class="text-center mb-12">
+            <h1 class="text-indigo-600">An Interactive Guide to the Fokker-Planck Equation</h1>
+            <p class="text-xl mt-4 text-slate-600">From Random Walks to Symbolic AI</p>
+        </header>
+
+        <!-- Introduction -->
+        <div class="content-card">
+            <h2>1. What is the Fokker-Planck Equation?</h2>
+            <p>
+                Imagine dropping a single speck of ink into a still glass of water. At first, it's just a tiny, concentrated dot. But over time, the random jostling of water molecules causes the ink to spread out, creating a diffuse cloud. The Fokker-Planck equation is the mathematical tool that describes this process precisely.
+            </p>
+            <p>
+                It's a powerful partial differential equation that describes how the <strong>probability distribution</strong> of a system evolves over time when it's influenced by two fundamental forces: a predictable, directional push (<strong>drift</strong>) and a random, uncertain jiggle (<strong>diffusion</strong>).
+            </p>
+        </div>
+
+        <!-- Core Concepts -->
+        <div class="content-card">
+            <h2>2. The Two Key Ingredients: Drift and Diffusion</h2>
+            <p>The Fokker-Planck equation is built on two simple but profound ideas. Let's look at them individually.</p>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h3>Drift: The Predictable Push</h3>
+                    <p>Drift is the deterministic part of the equation. It's a consistent force that pushes the system in a specific direction. Think of a ball rolling down a sloped surface—gravity provides a constant "drift" force.</p>
+                    <div class="simulation-container">
+                        <canvas id="drift-canvas" width="300" height="150"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h3>Diffusion: The Random Jiggle</h3>
+                    <p>Diffusion is the stochastic (random) part. It represents unpredictable fluctuations that cause the system to spread out. This is the essence of Brownian motion, where particles are bumped around by their neighbors.</p>
+                    <div class="simulation-container">
+                        <canvas id="diffusion-canvas" width="300" height="150"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Equation -->
+        <div class="content-card">
+            <h2>3. Putting It All Together: The Equation</h2>
+            <p>
+                When we combine drift and diffusion, we get the Fokker-Planck equation. In one dimension, it looks like this:
+            </p>
+            <div class="text-center text-lg my-8">
+                $$ \frac{\partial P(x, t)}{\partial t} = \underbrace{-\frac{\partial}{\partial x} [A(x) P(x, t)]}_{\text{Drift Term}} + \underbrace{\frac{1}{2} \frac{\partial^2}{\partial x^2} [B(x) P(x, t)]}_{\text{Diffusion Term}} $$
+            </div>
+            <ul>
+                <li>$P(x, t)$ is the probability density of finding the system at position $x$ at time $t$.</li>
+                <li>$A(x)$ is the <strong>Drift Coefficient</strong>, representing the strength and direction of the deterministic push.</li>
+                <li>$B(x)$ is the <strong>Diffusion Coefficient</strong>, representing the strength of the random fluctuations.</li>
+            </ul>
+        </div>
+        
+        <!-- Interactive Simulation -->
+        <div class="content-card">
+            <h2>4. Interactive Simulation: See it in Action!</h2>
+            <p>
+                Now let's see how changing the drift and diffusion coefficients affects our probability distribution. Our "system" will start as a highly probable state in the center. Use the sliders to control the forces and watch how the distribution evolves.
+            </p>
+
+            <div class="simulation-container">
+                <div id="main-simulation"></div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 mt-6">
+                <div>
+                    <div class="slider-label">
+                        <span>Drift (A)</span>
+                        <span id="drift-value">0</span>
+                    </div>
+                    <input type="range" id="drift-slider" min="-1" max="1" value="0" step="0.1">
+                </div>
+                <div>
+                    <div class="slider-label">
+                        <span>Diffusion (B)</span>
+                        <span id="diffusion-value">0.5</span>
+                    </div>
+                    <input type="range" id="diffusion-slider" min="0.01" max="2" value="0.5" step="0.01">
+                </div>
+            </div>
+             <div class="text-center mt-4">
+                <button id="reset-button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">Reset Simulation</button>
+            </div>
+        </div>
+
+        <!-- Symbolic AI -->
+        <div class="content-card">
+            <h2>5. Application: Symbolic AI and Belief</h2>
+            <p>
+                This isn't just for physics! We can use the same framework to model how an AI's <strong>belief</strong> or <strong>certainty</strong> in a proposition evolves.
+            </p>
+            <p>
+                Imagine an AI trying to determine if a statement is true or false. Its belief isn't just a binary choice; it's a probability.
+            </p>
+            <ul>
+                <li><strong>State (x):</strong> The AI's level of belief, from -1 (Certainly False) to +1 (Certainly True).</li>
+                <li><strong>Drift:</strong> An inherent <strong>bias</strong>. A positive drift might represent a "confirmation bias," where the AI is predisposed to believe the statement is true.</li>
+                <li><strong>Diffusion:</strong> The impact of new <strong>evidence</strong>. Strong, conflicting evidence creates high diffusion, making the belief state fluctuate wildly. Weak evidence results in low diffusion.</li>
+            </ul>
+
+            <div class="simulation-container">
+                <div id="ai-simulation"></div>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8 mt-6">
+                 <div>
+                    <div class="slider-label">
+                        <span>AI Bias (Drift)</span>
+                        <span id="ai-drift-value">0.2</span>
+                    </div>
+                    <input type="range" id="ai-drift-slider" min="-1" max="1" value="0.2" step="0.1">
+                </div>
+                <div>
+                    <div class="slider-label">
+                        <span>Evidence Impact (Diffusion)</span>
+                        <span id="ai-diffusion-value">0.3</span>
+                    </div>
+                    <input type="range" id="ai-diffusion-slider" min="0.01" max="1.5" value="0.3" step="0.01">
+                </div>
+            </div>
+             <div class="text-center mt-4">
+                <button id="ai-reset-button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">Reset AI Belief</button>
+            </div>
+        </div>
+        
+    </div>
+
+<script>
+// --- Simple Canvas Animations for Drift and Diffusion ---
+
+// Drift Animation
+const driftCanvas = document.getElementById('drift-canvas');
+const driftCtx = driftCanvas.getContext('2d');
+let driftX = 10;
+function animateDrift() {
+    driftCtx.clearRect(0, 0, driftCanvas.width, driftCanvas.height);
+    driftCtx.beginPath();
+    driftCtx.arc(driftX, driftCanvas.height / 2, 10, 0, Math.PI * 2);
+    driftCtx.fillStyle = "#6366f1";
+    driftCtx.fill();
+    driftX += 0.5;
+    if (driftX > driftCanvas.width - 10) {
+        driftX = 10;
+    }
+    requestAnimationFrame(animateDrift);
+}
+animateDrift();
+
+// Diffusion Animation
+const diffusionCanvas = document.getElementById('diffusion-canvas');
+const diffusionCtx = diffusionCanvas.getContext('2d');
+let diffusionPos = { x: diffusionCanvas.width / 2, y: diffusionCanvas.height / 2 };
+function animateDiffusion() {
+    diffusionCtx.clearRect(0, 0, diffusionCanvas.width, diffusionCanvas.height);
+    diffusionCtx.beginPath();
+    diffusionCtx.arc(diffusionPos.x, diffusionPos.y, 10, 0, Math.PI * 2);
+    diffusionCtx.fillStyle = "#ef4444";
+    diffusionCtx.fill();
+    diffusionPos.x += (Math.random() - 0.5) * 5;
+    diffusionPos.y += (Math.random() - 0.5) * 5;
+    if (diffusionPos.x < 10 || diffusionPos.x > diffusionCanvas.width - 10) diffusionPos.x = diffusionCanvas.width / 2;
+    if (diffusionPos.y < 10 || diffusionPos.y > diffusionCanvas.height - 10) diffusionPos.y = diffusionCanvas.height / 2;
+    requestAnimationFrame(animateDiffusion);
+}
+animateDiffusion();
+
+
+// --- Main Fokker-Planck Simulation using D3.js ---
+
+function setupSimulation(containerId, sliderIds, valueIds, xAxisLabel) {
+    const margin = {top: 20, right: 30, bottom: 40, left: 40};
+    const width = 600 - margin.left - margin.right;
+    const height = 300 - margin.top - margin.bottom;
+
+    const svg = d3.select(containerId)
+        .append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+    
+    // Domain setup
+    const xDomain = [-5, 5];
+    const nPoints = 201;
+    const xPoints = d3.range(nPoints).map(i => xDomain[0] + i * (xDomain[1] - xDomain[0]) / (nPoints - 1));
+
+    const x = d3.scaleLinear().domain(xDomain).range([0, width]);
+    const y = d3.scaleLinear().domain([0, 1]).range([height, 0]);
+
+    // X-axis
+    const xAxis = svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x));
+
+    if (xAxisLabel) {
+         xAxis.append("text")
+            .attr("class", "axis-label")
+            .attr("x", width / 2)
+            .attr("y", 35)
+            .attr("fill", "#1f2937")
+            .style("text-anchor", "middle")
+            .text(xAxisLabel);
+    }
+    
+    // Y-axis
+    svg.append("g").call(d3.axisLeft(y).ticks(5));
+
+    const line = d3.line()
+        .x(d => x(d.x))
+        .y(d => y(d.y));
+
+    const path = svg.append("path")
+        .attr("fill", "none")
+        .attr("stroke", "#4f46e5")
+        .attr("stroke-width", 2.5);
+
+    let mean, variance;
+    const initialVariance = 0.05;
+
+    function reset() {
+        mean = 0;
+        variance = initialVariance;
+    }
+    
+    reset();
+
+    const dt = 0.02; 
+
+    // Gaussian PDF
+    function gaussian(x, mean, variance) {
+        return (1 / Math.sqrt(2 * Math.PI * variance)) * Math.exp(-Math.pow(x - mean, 2) / (2 * variance));
+    }
+    
+    function update() {
+        // Read values from sliders
+        const drift = parseFloat(document.getElementById(sliderIds.drift).value);
+        const diffusion = parseFloat(document.getElementById(sliderIds.diffusion).value);
+
+        document.getElementById(valueIds.drift).textContent = drift.toFixed(2);
+        document.getElementById(valueIds.diffusion).textContent = diffusion.toFixed(2);
+
+        // This is a direct analytical solution for constant drift/diffusion
+        // The mean of the distribution moves according to the drift
+        mean += drift * dt;
+        // The variance of the distribution increases according to the diffusion
+        variance += diffusion * dt;
+
+        // Prevent mean from going too far off-screen for visualization purposes
+        if (mean > xDomain[1] || mean < xDomain[0]) {
+            mean = Math.max(xDomain[0], Math.min(xDomain[1], mean));
+        }
+        
+        const data = xPoints.map(xi => ({x: xi, y: gaussian(xi, mean, variance)}));
+        
+        const maxY = d3.max(data, d => d.y);
+        y.domain([0, Math.max(0.5, maxY * 1.1)]); // Adjust y-axis dynamically
+        svg.select(".y-axis").transition().duration(50).call(d3.axisLeft(y).ticks(5));
+
+        path.datum(data).attr("d", line);
+
+        requestAnimationFrame(update);
+    }
+    
+    return { reset, start: () => requestAnimationFrame(update) };
+}
+
+// --- Initialize Main Simulation ---
+const mainSim = setupSimulation(
+    '#main-simulation',
+    { drift: 'drift-slider', diffusion: 'diffusion-slider' },
+    { drift: 'drift-value', diffusion: 'diffusion-value' }
+);
+mainSim.start();
+document.getElementById('reset-button').addEventListener('click', mainSim.reset);
+
+// --- Initialize AI Simulation ---
+const aiSim = setupSimulation(
+    '#ai-simulation',
+    { drift: 'ai-drift-slider', diffusion: 'ai-diffusion-slider' },
+    { drift: 'ai-drift-value', diffusion: 'ai-diffusion-value' },
+    "Belief (False <-> True)"
+);
+aiSim.start();
+document.getElementById('ai-reset-button').addEventListener('click', aiSim.reset);
+
+
+</script>
+</body>
+</html>
