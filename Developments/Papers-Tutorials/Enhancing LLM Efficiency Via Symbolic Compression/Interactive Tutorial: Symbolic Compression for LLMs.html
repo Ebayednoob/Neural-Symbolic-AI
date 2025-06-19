@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Tutorial: Enhancing LLM Efficiency via Symbolic Compression</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0KOVEMfjDabA9zgpcJgcCQP4RENCRBlys+a4rAIMSEWCppTB9yYfz" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmFAILkLQG" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" xintegrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        .katex-display {
+            padding: 1em 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        .sidebar-link {
+            transition: all 0.2s ease-in-out;
+            border-left: 2px solid transparent;
+        }
+        .sidebar-link:hover {
+            color: #38bdf8;
+            border-left-color: #38bdf8;
+        }
+        .sidebar-link.active {
+            color: #7dd3fc;
+            border-left-color: #7dd3fc;
+            font-weight: 600;
+        }
+        .card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .symbol-tooltip {
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+            transition: color 0.2s;
+        }
+        .symbol-tooltip:hover {
+            color: #7dd3fc;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            width: 240px;
+            background-color: #334155;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -120px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+        .symbol-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="w-full">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 flex-shrink-0 bg-slate-900 p-8 sticky top-0 h-screen hidden md:block">
+            <h2 class="text-lg font-bold text-white mb-6">Tutorial Sections</h2>
+            <nav id="sidebar-nav" class="flex flex-col space-y-4">
+                <a href="#introduction" class="sidebar-link px-4 py-2 text-slate-400">Introduction</a>
+                <a href="#theory" class="sidebar-link px-4 py-2 text-slate-400">Theoretical Foundations</a>
+                <a href="#methodology" class="sidebar-link px-4 py-2 text-slate-400">Methodology</a>
+                <a href="#implementation" class="sidebar-link px-4 py-2 text-slate-400">Implementation</a>
+                <a href="#demos" class="sidebar-link px-4 py-2 text-slate-400">Interactive Demos</a>
+                <a href="#results" class="sidebar-link px-4 py-2 text-slate-400">Experimental Results</a>
+                <a href="#conclusion" class="sidebar-link px-4 py-2 text-slate-400">Conclusion</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10">
+            <div id="introduction" class="mb-12">
+                <h1 class="text-4xl font-bold text-white mb-4">Enhancing LLM Efficiency via Symbolic Compression</h1>
+                <p class="text-lg text-slate-400">An interactive tutorial on the paper by Ji et al., exploring how symbolic AI can make Large Language Models more efficient and interpretable.</p>
+            </div>
+
+            <section id="theory" class="mb-12 space-y-8">
+                <h2 class="text-3xl font-bold text-white pb-2 border-b border-slate-700">Theoretical Foundations</h2>
+                <div class="card rounded-lg p-6">
+                    <h3 class="text-2xl font-semibold text-sky-300 mb-3">Kolmogorov-Chaitin Complexity & Symbolic Density</h3>
+                    <p class="mb-4 text-slate-300">This theory provides a formal measure of an object's inherent complexity. The <strong>Kolmogorov complexity</strong> of a string, denoted $K(s)$, is the length of the shortest possible program that can generate that string. It's the ultimate measure of compressibility.</p>
+                    <p class="mb-4 text-slate-300">From this, the paper defines <strong>Symbolic Density ($\rho$)</strong> as the ratio of a string's complexity to its length:</p>
+                    <div class="bg-slate-900 rounded-md p-4 text-center">
+                        <span class="text-xl code-font">$$ \rho = \frac{K(s)}{|s|} $$</span>
+                    </div>
+                    <p class="mt-4 text-slate-300">The goal is to create a symbolic system where $\rho \rightarrow 1$, meaning the code has no redundancy and is information-theoretically optimal.</p>
+                </div>
+                <div class="card rounded-lg p-6">
+                    <h3 class="text-2xl font-semibold text-sky-300 mb-3">Combinatory Logic (SKI Combinators)</h3>
+                    <p class="mb-4 text-slate-300">Instead of complex systems like lambda calculus, the paper employs a minimal, universal system called SKI combinator calculus. It has just three fundamental building blocks:</p>
+                    <ul class="space-y-3 text-slate-300">
+                        <li><strong class="text-amber-300">S (Substituter):</strong> <code class="code-font bg-slate-800 px-2 py-1 rounded">Sxyz</code> evaluates to <code class="code-font bg-slate-800 px-2 py-1 rounded">xz(yz)</code>. It distributes one argument to two others.</li>
+                        <li><strong class="text-amber-300">K (Constant):</strong> <code class="code-font bg-slate-800 px-2 py-1 rounded">Kxy</code> evaluates to <code class="code-font bg-slate-800 px-2 py-1 rounded">x</code>. It discards its second argument.</li>
+                        <li><strong class="text-amber-300">I (Identity):</strong> <code class="code-font bg-slate-800 px-2 py-1 rounded">Ix</code> evaluates to <code class="code-font bg-slate-800 px-2 py-1 rounded">x</code>. It returns its argument.</li>
+                    </ul>
+                    <p class="mt-4 text-slate-300">Remarkably, any computable function can be expressed using only S and K (since I can be built from S and K as <code class="code-font bg-slate-800 px-2 py-1 rounded">SKK</code>). This makes it a powerful tool for compressing programs into a dense, minimal symbolic representation.</p>
+                </div>
+            </section>
+            
+            <section id="methodology" class="mb-12 space-y-8">
+                <h2 class="text-3xl font-bold text-white pb-2 border-b border-slate-700">Methodology</h2>
+                <div class="card rounded-lg p-6">
+                    <h3 class="text-2xl font-semibold text-sky-300 mb-3">Symbolic Density Optimization</h3>
+                    <p class="mb-4 text-slate-300">The core goal is to find the best symbolic representation $S$ for a program $P$. This is framed as an optimization problem balancing code length against semantic accuracy:</p>
+                     <div class="bg-slate-900 rounded-md p-4 text-center">
+                        <span class="text-xl code-font">$$ \min_{S}(\lambda|S| + (1-\lambda)\mathcal{D}(P,S)) $$</span>
+                    </div>
+                     <p class="mt-4 text-slate-300">Where $\mathcal{D}(P,S)$ is the semantic distance (meaning drift) and $\lambda$ is a weight controlling the trade-off between compression and fidelity.</p>
+                </div>
+                <div class="card rounded-lg p-6">
+                    <h3 class="text-2xl font-semibold text-sky-300 mb-3">Context-Aware Inference</h3>
+                    <p class="mb-4 text-slate-300">To be more efficient, the system infers information like variable types from context instead of stating them explicitly. The paper uses a probabilistic model for this:</p>
+                     <div class="bg-slate-900 rounded-md p-4 text-center">
+                        <span class="text-xl code-font">$$ P(\tau|C) = \frac{\exp(-E(\tau,C))}{\sum_{\tau'\in\Gamma}\exp(-E(\tau',C))} $$</span>
+                    </div>
+                     <p class="mt-4 text-slate-300">This is a Softmax over an "energy function" $E(\tau,C)$, where lower energy means a type $\tau$ is a better fit for the context $C$.</p>
+                </div>
+            </section>
+
+            <section id="implementation" class="mb-12 space-y-8">
+                <h2 class="text-3xl font-bold text-white pb-2 border-b border-slate-700">Engineering Implementation</h2>
+                <div class="card rounded-lg p-6">
+                     <h3 class="text-2xl font-semibold text-sky-300 mb-3">System Architecture</h3>
+                     <p class="mb-4 text-slate-300">The framework is a three-layer pipeline:</p>
+                     <ol class="list-decimal list-inside space-y-2 text-slate-300">
+                        <li><strong>Semantic Parsing Layer:</strong> Converts LLM output into an intermediate representation (IR).</li>
+                        <li><strong>Symbolic Compression Layer:</strong> Uses syntax transformation (like SKI combinators) on the IR to generate a GAEL language representation.</li>
+                        <li><strong>Target Generation Layer:</strong> Converts the compressed GAEL code into the final target language (e.g., Python).</li>
+                     </ol>
+                </div>
+                <div class="card rounded-lg p-6">
+                     <h3 class="text-2xl font-semibold text-sky-300 mb-3">Differentiable Compressor</h3>
+                     <p class="mb-4 text-slate-300">To achieve end-to-end training, a Transformer-based differentiable compression model is used. The compression is modeled as an attention mechanism:</p>
+                      <div class="bg-slate-900 rounded-md p-4 text-center">
+                        <span class="text-xl code-font">$$ \text{Compress}(x) = \text{SoftMax}(W_{Q}h(x)^{T}W_{K})W_{V} $$</span>
+                    </div>
+                    <p class="mt-4 text-slate-300">This allows the model to learn which parts of the input are most important and compress them into a symbolic representation.</p>
+                </div>
+                 <div class="card rounded-lg p-6">
+                    <h3 class="text-2xl font-semibold text-sky-300 mb-3">PEFT and the GAEL Language</h3>
+                     <p class="mb-4 text-slate-300">To teach an LLM to use the custom symbolic language <code class="code-font bg-slate-800 px-2 py-1 rounded">GAEL</code> without expensive retraining, the authors use <strong>Parameter-Efficient Fine-Tuning (PEFT)</strong> techniques like Adapters and LoRA. This grafts the GAEL logic onto a pre-trained LLM at a low cost.</p>
+                </div>
+            </section>
+
+            <section id="demos" class="mb-12 space-y-8">
+                <h2 class="text-3xl font-bold text-white pb-2 border-b border-slate-700">Interactive Demos</h2>
+                
+                <!-- Demo 1: SKI Compressor -->
+                <div class="card rounded-lg p-6">
+                    <h3 class="text-2xl font-semibold text-center text-sky-300 mb-2">Demo 1: Symbolic Compression with SKI</h3>
+                    <p class="text-center text-slate-400 mb-6">A simplified simulation of converting lambda expressions to SKI combinators to illustrate the compression principle.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div>
+                            <label for="lambdaInput" class="block text-sm font-medium mb-2 text-slate-300">Lambda Expression</label>
+                            <textarea id="lambdaInput" rows="4" class="w-full p-3 code-font bg-slate-800 border border-slate-600 rounded-md focus:ring-2 focus:ring-sky-500 focus:outline-none">λx.λy.x</textarea>
+                            <div class="mt-2 text-sm text-slate-400">Try presets: 
+                                <button class="preset-btn code-font text-sky-400 hover:underline">λx.x</button>, 
+                                <button class="preset-btn code-font text-sky-400 hover:underline">λx.y</button>, 
+                                <button class="preset-btn code-font text-sky-400 hover:underline">λx.λy.y</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="skiOutput" class="block text-sm font-medium mb-2 text-slate-300">Compressed SKI Combinator</label>
+                            <div id="skiOutput" class="w-full h-24 p-3 code-font bg-slate-900 border border-slate-600 rounded-md overflow-x-auto text-amber-300 flex items-center justify-center text-2xl"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Demo 2: Interpretability -->
+                <div class="card rounded-lg p-6">
+                    <h3 class="text-2xl font-semibold text-center text-sky-300 mb-2">Demo 2: Structural Explicitness</h3>
+                    <p class="text-center text-slate-400 mb-6">Symbolic code enhances interpretability by making operations explicit. Hover over symbols to see their precise meaning.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="text-lg font-semibold mb-2 text-center text-slate-300">Traditional Code</h4>
+                            <div class="code-font text-xl p-4 bg-slate-900 rounded-md text-center">x = y + z</div>
+                            <p class="text-sm text-slate-400 mt-2">The '+' operator is ambiguous. Is it integer addition, float addition, or string concatenation? The context is implicit.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold mb-2 text-center text-slate-300">Symbolic Code (GAEL)</h4>
+                            <div class="code-font text-xl p-4 bg-slate-900 rounded-md text-center">
+                                <span class="symbol-tooltip">x<span class="tooltip-text">Variable 'x'</span></span>
+                                <span class="symbol-tooltip text-sky-400">&leftarrow;<span class="tooltip-text">Unambiguous assignment. Not comparison.</span></span>
+                                <span class="symbol-tooltip">y<span class="tooltip-text">Variable 'y'</span></span>
+                                <span class="symbol-tooltip text-amber-400">&oplus;<span class="tooltip-text">Specific addition operator.</span></span>
+                                <sub class="symbol-tooltip text-green-400">&#8484;<span class="tooltip-text">Specifies operation on Integers (&#8484;), removing ambiguity.</span></sub>
+                                <span class="symbol-tooltip">z<span class="tooltip-text">Variable 'z'</span></span>
+                            </div>
+                            <p class="text-sm text-slate-400 mt-2">Every operation is explicit. The logic is transparent, enhancing traceability for humans and models.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="results" class="mb-12 space-y-8">
+                 <h2 class="text-3xl font-bold text-white pb-2 border-b border-slate-700">Experimental Results</h2>
+                 <div class="card rounded-lg p-6">
+                     <h3 class="text-2xl font-semibold text-sky-300 mb-3">Performance on Standard Benchmarks</h3>
+                     <p class="mb-4 text-slate-300">Experiments on HumanEval and MBPP datasets show significant improvements over baseline methods.</p>
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-800">
+                                    <th class="p-3 border-b border-slate-600">Method</th>
+                                    <th class="p-3 border-b border-slate-600">Compression Rate (CR)</th>
+                                    <th class="p-3 border-b border-slate-600">Interpretability (1-5)</th>
+                                    <th class="p-3 border-b border-slate-600">Inference Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="bg-slate-700/50">
+                                    <td class="p-3 border-b border-slate-600">Standard Prompting</td>
+                                    <td class="p-3 border-b border-slate-600">0%</td>
+                                    <td class="p-3 border-b border-slate-600">2.8</td>
+                                    <td class="p-3 border-b border-slate-600">1.0x</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 border-b border-slate-600">Grammar Constraint</td>
+                                    <td class="p-3 border-b border-slate-600">41%</td>
+                                    <td class="p-3 border-b border-slate-600">3.1</td>
+                                    <td class="p-3 border-b border-slate-600">1.2x</td>
+                                </tr>
+                                <tr class="bg-sky-500/10">
+                                    <td class="p-3 border-b border-slate-600 font-bold text-sky-300">Proposed Method (GAEL + PEFT)</td>
+                                    <td class="p-3 border-b border-slate-600 font-bold text-green-400">78.3%</td>
+                                    <td class="p-3 border-b border-slate-600 font-bold text-green-400">4.2</td>
+                                    <td class="p-3 border-b border-slate-600 font-bold text-green-400">0.9x</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                 </div>
+            </section>
+
+            <section id="conclusion" class="mb-12">
+                 <h2 class="text-3xl font-bold text-white pb-2 border-b border-slate-700">Conclusion</h2>
+                 <div class="card rounded-lg p-6">
+                    <p class="text-slate-300">The symbolic compression framework significantly improves LLM token efficiency and interpretability in code generation and logical reasoning. By integrating combinatory logic, optimal encoding, and context-aware inference, the method achieves a <strong>78.3% token compression rate</strong> while enhancing logical traceability. This research provides new theoretical tools for efficient inference and opens a promising symbolic path for model interpretability research.</p>
+                 </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // --- Render LaTeX Math ---
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                ]
+            });
+
+            // --- Sidebar Active Link Highlighting ---
+            const sections = document.querySelectorAll('main section');
+            const navLinks = document.querySelectorAll('#sidebar-nav a');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+            
+            // --- SKI Combinator Demo Logic ---
+            const lambdaInput = document.getElementById('lambdaInput');
+            const skiOutput = document.getElementById('skiOutput');
+            const presetBtns = document.querySelectorAll('.preset-btn');
+
+            const toSki = (lambda) => {
+                lambda = lambda.trim().replace(/\\/g, 'λ');
+                // Rule: λx.x → I
+                if (lambda.match(/^λ([a-z])\.\1$/)) return 'I';
+                // Rule: λx.y → Ky
+                if (lambda.match(/^λ([a-z])\.([a-z])$/) && RegExp.$1 !== RegExp.$2) return `(K ${RegExp.$2})`;
+                // Rule: λx.λy.x → K
+                if (lambda.match(/^λ([a-z])\.λ([a-z])\.\1$/)) return 'K';
+                // Rule: λx.λy.y → SK
+                if (lambda.match(/^λ([a-z])\.λ([a-z])\.\2$/)) return '(SK)';
+                // Placeholder for more complex rules
+                if (lambda.includes('(') || lambda.includes(' ')) return 'S(...)';
+                return '?';
+            };
+
+            const convertLambda = () => {
+                skiOutput.textContent = toSki(lambdaInput.value);
+            };
+            
+            lambdaInput.addEventListener('input', convertLambda);
+            presetBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    lambdaInput.value = btn.textContent;
+                    convertLambda();
+                });
+            });
+
+            // Initial conversion on load
+            convertLambda();
+        });
+    </script>
+</body>
+</html>
