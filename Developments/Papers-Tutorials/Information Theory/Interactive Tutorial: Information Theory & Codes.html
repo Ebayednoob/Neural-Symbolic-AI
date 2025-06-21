@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Tutorial: Information Theory & Codes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .concept-box {
+            @apply bg-white p-6 rounded-lg shadow-lg mb-12 border border-gray-200;
+        }
+        .definition {
+            @apply bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 my-4 rounded-r-lg;
+        }
+        .theorem {
+             @apply bg-green-50 border-l-4 border-green-500 text-green-800 p-4 my-4 rounded-r-lg;
+        }
+        .interactive-area {
+            @apply bg-gray-50 p-6 rounded-lg mt-6 border border-gray-200;
+        }
+        h2 {
+            @apply text-3xl font-bold text-gray-800 mb-4 border-b pb-3;
+        }
+        h3 {
+            @apply text-2xl font-semibold text-gray-700 mt-8 mb-4;
+        }
+        h4 {
+            @apply text-xl font-semibold text-gray-700 mt-6 mb-3;
+        }
+        code.inline {
+            @apply bg-gray-200 text-gray-800 font-mono py-1 px-2 rounded-md text-sm;
+        }
+        .code-output {
+            @apply bg-gray-800 text-white font-mono p-4 rounded-md mt-2 text-left text-lg break-all;
+        }
+        .btn {
+            @apply bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:bg-gray-400;
+        }
+        .tree-node {
+            stroke: #4A5568; /* gray-700 */
+            stroke-width: 2;
+            fill: white;
+        }
+        .tree-leaf {
+            fill: #48BB78; /* green-500 */
+        }
+        .tree-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            fill: #2D3748; /* gray-800 */
+            text-anchor: middle;
+        }
+        .tree-edge {
+             stroke: #A0AEC0; /* gray-500 */
+             stroke-width: 2;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-700">
+
+    <div class="container mx-auto p-4 sm:p-8">
+        <header class="text-center mb-12">
+            <h1 class="text-5xl font-extrabold text-gray-900">Information Theory & Codes: A Deep Dive</h1>
+            <p class="mt-4 text-xl text-gray-600">A multipart, interactive lesson on the foundations of data compression.</p>
+        </header>
+
+        <main>
+            <!-- Lesson 1: Entropy -->
+            <div id="lesson-1" class="concept-box">
+                <h2>Part 1: Entropy & Information</h2>
+                <p>Information theory begins with a simple question: how do we quantify information? The answer lies in the concept of <strong class="font-semibold">entropy</strong>, which measures the average uncertainty or "surprise" of a random variable.</p>
+
+                <h3>Visualizing Entropy</h3>
+                <p>A distribution with low entropy is predictable. A distribution with high entropy is unpredictable. The maximum possible entropy for a variable with <code class="inline">|X|</code> outcomes occurs when all outcomes are equally likely (the uniform distribution).</p>
+                <div class="interactive-area">
+                    <h4>Interactive Entropy Calculator</h4>
+                    <p>Adjust the probability of Outcome A for a 3-outcome variable. Outcome C is fixed at 20%. See how the entropy changes as the distribution shifts.</p>
+                    <label for="prob-slider" class="font-semibold">P(A): <span id="prob-a-label"></span></label>
+                    <input type="range" id="prob-slider" min="0" max="80" value="40" class="w-full mt-2">
+                    <div class="mt-4 p-4 bg-white rounded-lg shadow-inner">
+                        <div id="dist-chart" class="w-full h-48"></div>
+                        <p class="text-center font-bold text-xl mt-4">Entropy H(X) = <span id="entropy-value" class="text-blue-600"></span> bits</p>
+                    </div>
+                </div>
+                
+                <h3>Fano's Inequality: The Limits of Guessing</h3>
+                <p>Fano's inequality gives us a hard limit on our ability to guess a random variable <code class="inline">X</code> even if we have information from a related variable <code class="inline">Y</code>. It connects the remaining uncertainty (<strong class="font-semibold">conditional entropy</strong>) to the probability of making an error.</p>
+                <div class="theorem">
+                    <p><strong class="font-semibold">Fano's Inequality:</strong> H(X|Y) ≤ H(Pₑ) + Pₑ log₂(|X| - 1)</p>
+                    <p class="mt-2">If your probability of error (Pₑ) is low, the right side of the inequality is small. This forces the conditional entropy H(X|Y) to also be small, meaning you must have low uncertainty about X given Y. You cannot have a low error rate and high uncertainty simultaneously.</p>
+                </div>
+                 <div class="interactive-area">
+                    <h4>Visualizing the Fano Bound</h4>
+                    <p>This chart shows how the maximum allowable conditional entropy (the "Fano Bound") changes with the error rate. If your actual H(X|Y) is above this bound, the situation is impossible.</p>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="error-slider" class="font-semibold">Probability of Error (Pₑ): <span id="error-label"></span></label>
+                            <input type="range" id="error-slider" min="0" max="100" value="25" class="w-full mt-2">
+                        </div>
+                        <div>
+                            <label for="outcomes-slider" class="font-semibold">Number of Outcomes |X|: <span id="outcomes-label"></span></label>
+                            <input type="range" id="outcomes-slider" min="2" max="16" value="4" class="w-full mt-2">
+                        </div>
+                    </div>
+                    <div class="mt-4 p-4 bg-white rounded-lg shadow-inner">
+                        <div id="fano-chart" class="w-full h-64"></div>
+                         <p id="fano-verdict" class="text-center font-bold text-lg mt-2"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lesson 2: Codes -->
+            <div id="lesson-2" class="concept-box">
+                <h2>Part 2: The Language of Codes</h2>
+                <p>A <strong class="font-semibold">code</strong> is a system for translating symbols from one alphabet (e.g., English letters) into another (e.g., binary digits). The goal is to create a representation that is both efficient and, crucially, <strong class="font-semibold">unambiguous</strong>.</p>
+                
+                <h3>The Concatenation Problem & The Need for Better Codes</h3>
+                <p>Simply assigning a unique binary string to each symbol isn't enough. When we concatenate codewords, we can create ambiguity. This is the core problem that leads to the study of different code properties.</p>
+                <div class="definition">
+                    <ul class="space-y-3">
+                        <li><strong class="font-semibold">Uniquely Decodable (UD):</strong> Every <em class="italic">sequence</em> of symbols maps to a unique encoded string. This is the minimum requirement for a useful code.</li>
+                        <li><strong class="font-semibold">Prefix Code:</strong> No codeword is a prefix of another codeword. This is a much stronger condition that makes decoding incredibly simple and fast.</li>
+                    </ul>
+                </div>
+
+                <h3>Visualizing Codes with Trees</h3>
+                <p>We can visualize a binary code as a binary tree. Each edge represents a bit (0 for left, 1 for right). A codeword corresponds to a path from the root.</p>
+                <div class="interactive-area">
+                    <h4>Prefix vs. Non-Prefix Trees</h4>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="font-bold text-lg text-green-700">Prefix Code Tree</h4>
+                            <p>Code: {A:0, B:10, C:110, D:111}</p>
+                            <p class="text-sm">Notice all codewords (A, B, C, D) are at <strong class="font-semibold text-green-700">leaf nodes</strong>. You can't continue a path past a valid codeword.</p>
+                            <svg id="prefix-tree" class="w-full h-64 mt-2"></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg text-red-700">Non-Prefix Code Tree</h4>
+                            <p>Code: {A:0, B:01, C:011, D:111}</p>
+                            <p class="text-sm">Codeword 'A' is an <strong class="font-semibold text-red-700">internal node</strong> on the path to 'B' and 'C'. This is what creates ambiguity.</p>
+                            <svg id="nonprefix-tree" class="w-full h-64 mt-2"></svg>
+                        </div>
+                    </div>
+                </div>
+                 <h3>Interactive Decoder</h3>
+                <p>The practical difference is huge. A prefix code can be decoded instantly. A non-prefix (but uniquely decodable) code might require you to look far ahead in the message to resolve ambiguity.</p>
+                 <div class="interactive-area">
+                     <h4 class="font-bold text-lg">Try Decoding This Non-Prefix Code</h4>
+                     <p>Code: {A:0, B:01, C:011, D:111}</p>
+                     <p class="my-2">What does the string <code class="inline">0011111</code> represent?</p>
+                     <p>It's <strong class="font-semibold">ACD</strong>. You can't know the first '0' is an 'A' until you've processed the rest of the string. A decoder would have to backtrack.</p>
+                </div>
+            </div>
+
+            <!-- Lesson 3: Efficiency -->
+            <div id="lesson-3" class="concept-box">
+                <h2>Part 3: Efficiency & Optimal Codes</h2>
+                <p>We want our codes to be unambiguous, but also efficient. An efficient code uses shorter codewords for more frequent symbols, minimizing the average length of an encoded message.</p>
+
+                <h3>The Kraft-McMillan Theorem</h3>
+                <p>This remarkable theorem connects the property of unique decodability to codeword lengths. It tells us the mathematical constraint that all UD code lengths must obey.</p>
+                 <div class="theorem">
+                     <p><strong class="font-semibold">Kraft-McMillan Theorem:</strong> A uniquely decodable D-ary code with lengths L₁, L₂, ... exists if and only if: <strong class="text-xl font-mono block text-center my-2">∑ (1/D)<sup>Lᵢ</sup> ≤ 1</strong></p>
+                     <p class="mt-2">Crucially, it also proves that for any set of lengths that satisfies this inequality, a <strong class="font-semibold">prefix code</strong> can be constructed. This means we lose no efficiency by restricting ourselves to easy-to-decode prefix codes!</p>
+                </div>
+                <div class="interactive-area">
+                    <h4>Kraft Inequality Checker</h4>
+                    <label for="lengths-input" class="font-semibold">Enter binary codeword lengths (e.g., 2, 2, 2, 2):</label>
+                    <input type="text" id="lengths-input" placeholder="2, 2, 2, 2" class="w-full p-2 mt-2 rounded-md border">
+                    <button id="kraft-check-btn" class="btn mt-4">Check Inequality</button>
+                    <div id="kraft-result" class="mt-4 font-mono text-lg"></div>
+                </div>
+                
+                <h3>Building an Optimal Prefix Code: Huffman Coding</h3>
+                <p>The Kraft-McMillan theorem is an existence proof. The <strong class="font-semibold">Huffman algorithm</strong> is a constructive proof: a simple, greedy algorithm that creates an optimal prefix code for a given probability distribution.</p>
+                <p>The algorithm repeatedly merges the two least probable symbols into a new "meta-symbol", building a binary tree from the leaves up to the root.</p>
+
+                <div class="interactive-area">
+                    <h4>Interactive Huffman Coder</h4>
+                    <p>Enter symbols and their frequencies (or probabilities). The tool will generate the optimal Huffman code.</p>
+                    <label for="huffman-input" class="font-semibold">Input (symbol:frequency, e.g., a:45, b:13, c:12, d:16, e:9, f:5)</label>
+                    <textarea id="huffman-input" class="w-full p-2 mt-2 rounded-md border font-mono" rows="4">a: 45, b: 13, c: 12, d: 16, e: 9, f: 5</textarea>
+                    <button id="huffman-btn" class="btn mt-4">Generate Huffman Code</button>
+                    <div id="huffman-output" class="mt-4 grid md:grid-cols-2 gap-8 items-center">
+                        <div id="huffman-table"></div>
+                        <div id="huffman-tree-container"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Lesson 1: Entropy Viz ---
+            const slider = document.getElementById('prob-slider');
+            const probALabel = document.getElementById('prob-a-label');
+            const chartDiv = document.getElementById('dist-chart');
+            const entropyValue = document.getElementById('entropy-value');
+
+            function calculateEntropy(probs) {
+                return -probs.reduce((sum, p) => {
+                    if (p === 0) return sum;
+                    return sum + p * Math.log2(p);
+                }, 0);
+            }
+            
+            function binaryEntropy(p) {
+                if (p === 0 || p === 1) return 0;
+                return -p * Math.log2(p) - (1-p) * Math.log2(1-p);
+            }
+
+            function updateEntropyViz() {
+                const pA = slider.value / 100;
+                const pC = 0.20;
+                const pB = 1.0 - pA - pC;
+                
+                probALabel.textContent = `${(pA * 100).toFixed(0)}%`;
+                
+                const probs = [pA, pB, pC];
+                const entropy = calculateEntropy(probs);
+                entropyValue.textContent = entropy.toFixed(4);
+
+                chartDiv.innerHTML = `
+                    <svg width="100%" height="100%" viewBox="0 0 300 150">
+                        <rect x="50" y="${150 - pA*150}" width="50" height="${pA*150}" fill="#3B82F6"></rect>
+                        <text x="75" y="${145 - pA*150}" class="tree-text" font-weight="bold">A</text>
+                        <rect x="125" y="${150 - pB*150}" width="50" height="${pB*150}" fill="#3B82F6"></rect>
+                        <text x="150" y="${145 - pB*150}" class="tree-text" font-weight="bold">B</text>
+                        <rect x="200" y="${150 - pC*150}" width="50" height="${pC*150}" fill="#3B82F6"></rect>
+                        <text x="225" y="${145 - pC*150}" class="tree-text" font-weight="bold">C</text>
+                        <line x1="0" y1="150" x2="300" y2="150" stroke="#9CA3AF"></line>
+                    </svg>
+                `;
+            }
+            slider.addEventListener('input', updateEntropyViz);
+            updateEntropyViz();
+
+            // Fano's Inequality Viz
+            const errorSlider = document.getElementById('error-slider');
+            const outcomesSlider = document.getElementById('outcomes-slider');
+            const errorLabel = document.getElementById('error-label');
+            const outcomesLabel = document.getElementById('outcomes-label');
+            const fanoChartDiv = document.getElementById('fano-chart');
+            const fanoVerdict = document.getElementById('fano-verdict');
+            
+            function updateFanoViz() {
+                const Pe = errorSlider.value / 100;
+                const numOutcomes = parseInt(outcomesSlider.value);
+
+                errorLabel.textContent = `${(Pe * 100).toFixed(0)}%`;
+                outcomesLabel.textContent = numOutcomes;
+                
+                const hPe = binaryEntropy(Pe);
+                const logTerm = numOutcomes > 1 ? Math.log2(numOutcomes - 1) : 0;
+                const fanoBound = hPe + Pe * logTerm;
+                
+                // A hypothetical H(X|Y) for comparison. Let's make it fixed for simplicity.
+                const hypotheticalH = 1.5; 
+                
+                const maxVal = Math.max(logTerm + 1, hypotheticalH + 0.5);
+
+                const fanoBarHeight = (fanoBound / maxVal) * 100;
+                const hypoBarHeight = (hypotheticalH / maxVal) * 100;
+
+                fanoChartDiv.innerHTML = `
+                    <svg width="100%" height="100%" viewBox="0 0 300 200">
+                        <!-- Fano Bound Bar -->
+                        <rect x="50" y="${200 - fanoBarHeight*1.8}" width="80" height="${fanoBarHeight*1.8}" fill="#10B981"></rect>
+                        <text x="90" y="195" class="tree-text" font-weight="bold">Fano Bound</text>
+                        <text x="90" y="${195 - fanoBarHeight*1.8}" class="tree-text" font-weight="bold">${fanoBound.toFixed(2)}</text>
+                        
+                        <!-- Hypothetical Entropy Bar -->
+                        <rect x="170" y="${200 - hypoBarHeight*1.8}" width="80" height="${hypoBarHeight*1.8}" fill="#60A5FA"></rect>
+                        <text x="210" y="195" class="tree-text" font-weight="bold">H(X|Y)</text>
+                        <text x="210" y="${195 - hypoBarHeight*1.8}" class="tree-text" font-weight="bold">${hypotheticalH.toFixed(2)}</text>
+                        
+                        <line x1="0" y1="180" x2="300" y2="180" stroke="#9CA3AF"></line>
+                    </svg>
+                `;
+
+                if (hypotheticalH <= fanoBound) {
+                    fanoVerdict.textContent = "H(X|Y) ≤ Fano Bound. This scenario is possible.";
+                    fanoVerdict.className = "text-center font-bold text-lg mt-2 text-green-600";
+                } else {
+                    fanoVerdict.textContent = "H(X|Y) > Fano Bound. This scenario is impossible!";
+                    fanoVerdict.className = "text-center font-bold text-lg mt-2 text-red-600";
+                }
+            }
+            errorSlider.addEventListener('input', updateFanoViz);
+            outcomesSlider.addEventListener('input', updateFanoViz);
+            updateFanoViz();
+
+
+            // --- Lesson 2: Tree Vizzes ---
+            function drawCodeTree(svgId, codebook) {
+                const svg = document.getElementById(svgId);
+                if (!svg) return;
+                svg.innerHTML = '';
+                const width = svg.clientWidth;
+                const height = svg.clientHeight;
+                if (width === 0) return; // Don't draw if container isn't visible
+                
+                let nodes = { root: { x: width / 2, y: 30, children: {} } };
+                let maxDepth = 0;
+                
+                // Build node structure
+                Object.entries(codebook).forEach(([symbol, code]) => {
+                    let current = nodes.root;
+                    if(code.length > maxDepth) maxDepth = code.length;
+                    for(let i=0; i < code.length; i++) {
+                        const bit = code[i];
+                        if (!current.children[bit]) {
+                            const parentDepth = i;
+                            const newX = current.x + (bit === '0' ? -1 : 1) * (width / Math.pow(2, parentDepth + 2));
+                            const newY = current.y + 50;
+                            const newNodeId = `node_${Object.keys(nodes).length}`;
+                            current.children[bit] = { id: newNodeId, x: newX, y: newY, children: {} };
+                            nodes[newNodeId] = current.children[bit];
+                        }
+                        current = current.children[bit];
+                        if (i === code.length - 1) {
+                            current.symbol = symbol;
+                        }
+                    }
+                });
+
+                // Draw Edges and Edge Labels
+                function drawEdges(node) {
+                    if(!node) return;
+                    Object.entries(node.children).forEach(([bit, childNode]) => {
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', node.x); line.setAttribute('y1', node.y);
+                        line.setAttribute('x2', childNode.x); line.setAttribute('y2', childNode.y);
+                        line.setAttribute('class', 'tree-edge');
+                        svg.appendChild(line);
+
+                        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        text.setAttribute('x', (node.x + childNode.x)/2 + (bit==='0' ? -5: 5));
+                        text.setAttribute('y', (node.y + childNode.y)/2);
+                        text.setAttribute('class', 'tree-text');
+                        text.textContent = bit;
+                        svg.appendChild(text);
+
+                        drawEdges(childNode);
+                    });
+                }
+                drawEdges(nodes.root);
+
+                // Draw Nodes and Node Labels
+                 Object.values(nodes).forEach(node => {
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', node.x); circle.setAttribute('cy', node.y);
+                    circle.setAttribute('r', node.symbol ? '15' : '8');
+                    circle.setAttribute('class', node.symbol ? 'tree-node tree-leaf' : 'tree-node');
+                    svg.appendChild(circle);
+
+                    if(node.symbol) {
+                         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                         text.setAttribute('x', node.x); text.setAttribute('y', node.y + 5);
+                         text.setAttribute('class', 'tree-text');
+                         text.setAttribute('fill', 'white');
+                         text.setAttribute('font-weight', 'bold');
+                         text.textContent = node.symbol;
+                         svg.appendChild(text);
+                    }
+                });
+            }
+            
+            // --- Lesson 3: Kraft & Huffman ---
+            const lengthsInput = document.getElementById('lengths-input');
+            const kraftCheckBtn = document.getElementById('kraft-check-btn');
+            const kraftResult = document.getElementById('kraft-result');
+            
+            kraftCheckBtn.addEventListener('click', () => {
+                const lengthsStr = lengthsInput.value;
+                if (!lengthsStr) {
+                    kraftResult.innerHTML = '<p class="text-red-500">Please enter codeword lengths.</p>';
+                    return;
+                }
+                const lengths = lengthsStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
+                if (lengths.length === 0) {
+                    kraftResult.innerHTML = '<p class="text-red-500">Please enter valid, positive integer lengths.</p>';
+                    return;
+                }
+                const D = 2;
+                let sum = 0;
+                let calculationHTML = 'Sum = ';
+                lengths.forEach((L, index) => {
+                    sum += Math.pow(D, -L);
+                    calculationHTML += `(1/2)<sup>${L}</sup>` + (index < lengths.length - 1 ? ' + ' : '');
+                });
+                calculationHTML += ` = ${sum.toFixed(4)}`;
+                let resultHTML = `<p>${calculationHTML}</p>`;
+                if (sum <= 1) {
+                    resultHTML += `<p class="mt-2 text-green-600 font-bold">Sum ≤ 1. A prefix code with these lengths can be constructed!</p>`;
+                } else {
+                    resultHTML += `<p class="mt-2 text-red-600 font-bold">Sum > 1. No UD code exists with these lengths.</p>`;
+                }
+                kraftResult.innerHTML = resultHTML;
+            });
+
+            // Huffman Logic
+            const huffmanInput = document.getElementById('huffman-input');
+            const huffmanBtn = document.getElementById('huffman-btn');
+            const huffmanTableDiv = document.getElementById('huffman-table');
+            const huffmanTreeContainer = document.getElementById('huffman-tree-container');
+
+            huffmanBtn.addEventListener('click', () => {
+                const inputText = huffmanInput.value;
+                const items = inputText.split(',')
+                    .map(s => s.trim().split(':'))
+                    .filter(parts => parts.length === 2)
+                    .map(([symbol, freq]) => ({ symbol: symbol.trim(), freq: parseInt(freq.trim()) }))
+                    .filter(item => item.symbol && !isNaN(item.freq) && item.freq > 0);
+
+                if (items.length < 2) {
+                    huffmanTableDiv.innerHTML = '<p class="text-red-500">Please provide at least two symbols with valid frequencies.</p>';
+                    huffmanTreeContainer.innerHTML = '';
+                    return;
+                }
+
+                let pq = items.map(item => ({ symbol: item.symbol, freq: item.freq, leaf: true }));
+                
+                while (pq.length > 1) {
+                    pq.sort((a, b) => a.freq - b.freq);
+                    let left = pq.shift();
+                    let right = pq.shift();
+                    let newNode = { symbol: `${left.symbol}${right.symbol}`, freq: left.freq + right.freq, left: left, right: right, leaf: false };
+                    pq.push(newNode);
+                }
+                const treeRoot = pq.length > 0 ? pq[0] : null;
+                
+                const codes = {};
+                function generateCodes(node, path) {
+                    if (!node) return;
+                    if (node.leaf) {
+                        codes[node.symbol] = path || '0';
+                        return;
+                    }
+                    generateCodes(node.left, path + '0');
+                    generateCodes(node.right, path + '1');
+                }
+                if (treeRoot) generateCodes(treeRoot, '');
+
+                let tableHTML = `<h4 class="font-bold text-lg mb-2">Optimal Prefix Code:</h4><table class="w-full text-left font-mono"><thead><tr class="border-b"><th class="p-2">Symbol</th><th class="p-2">Freq.</th><th class="p-2">Codeword</th><th class="p-2">Length</th></tr></thead><tbody>`;
+                const sortedSymbols = Object.keys(codes).sort();
+                let totalFreq = items.reduce((sum, item) => sum + item.freq, 0);
+                let avgLength = 0;
+
+                for(const symbol of sortedSymbols){
+                    const freq = items.find(i => i.symbol === symbol).freq;
+                    const code = codes[symbol];
+                    tableHTML += `<tr class="border-b"><td class="p-2">${symbol}</td><td class="p-2">${freq}</td><td class="p-2">${code}</td><td class="p-2">${code.length}</td></tr>`;
+                    if(totalFreq > 0) avgLength += (freq / totalFreq) * code.length;
+                }
+                tableHTML += `</tbody></table>`;
+                tableHTML += `<p class="mt-4 font-semibold">Average Codeword Length: ${avgLength.toFixed(3)} bits/symbol</p>`;
+                huffmanTableDiv.innerHTML = tableHTML;
+                
+                huffmanTreeContainer.innerHTML = `<h4 class="font-bold text-lg mb-2">Huffman Tree:</h4><svg id="huffman-tree-svg" class="w-full h-96"></svg>`;
+                if (treeRoot) drawHuffmanTree(treeRoot);
+            });
+            
+            function drawHuffmanTree(root) {
+                 const svg = document.getElementById('huffman-tree-svg');
+                 if(!svg) return;
+                 svg.innerHTML = '';
+                 const width = svg.clientWidth;
+                 if (width === 0) return;
+
+                 function assignPositions(node, depth, x, xOffset) {
+                    if (!node) return;
+                    node.x = x;
+                    node.y = 40 + depth * 70;
+                    if(node.left) assignPositions(node.left, depth + 1, x - xOffset, xOffset/2);
+                    if(node.right) assignPositions(node.right, depth + 1, x + xOffset, xOffset/2);
+                 }
+                 assignPositions(root, 0, width / 2, width / 4);
+                 
+                 const queue = [root];
+                 while (queue.length > 0) {
+                     const node = queue.shift();
+                     if (node.left) {
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', node.x); line.setAttribute('y1', node.y);
+                        line.setAttribute('x2', node.left.x); line.setAttribute('y2', node.left.y);
+                        line.setAttribute('class', 'tree-edge');
+                        svg.appendChild(line);
+                        queue.push(node.left);
+                     }
+                     if (node.right) {
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', node.x); line.setAttribute('y1', node.y);
+                        line.setAttribute('x2', node.right.x); line.setAttribute('y2', node.right.y);
+                        line.setAttribute('class', 'tree-edge');
+                        svg.appendChild(line);
+                        queue.push(node.right);
+                     }
+                 }
+
+                 const queue2 = [root];
+                 while (queue2.length > 0) {
+                     const node = queue2.shift();
+                     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                     circle.setAttribute('cx', node.x); circle.setAttribute('cy', node.y);
+                     circle.setAttribute('r', node.leaf ? '20' : '15');
+                     circle.setAttribute('class', node.leaf ? 'tree-node tree-leaf' : 'tree-node');
+                     svg.appendChild(circle);
+
+                     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                     text.setAttribute('x', node.x); text.setAttribute('y', node.y + 5);
+                     text.setAttribute('class', 'tree-text');
+                     text.setAttribute('fill', node.leaf ? 'white' : '#2D3748');
+                     text.setAttribute('font-weight', 'bold');
+                     text.textContent = `${node.leaf ? node.symbol + ':' : ''}${node.freq}`;
+                     svg.appendChild(text);
+
+                     if(node.left) queue2.push(node.left);
+                     if(node.right) queue2.push(node.right);
+                 }
+            }
+
+            // --- Initial drawing calls ---
+            drawCodeTree('prefix-tree', { A: '0', B: '10', C: '110', D: '111' });
+            drawCodeTree('nonprefix-tree', { A: '0', B: '01', C: '011', D: '111' });
+            huffmanBtn.click();
+            
+            // Redraw trees on resize to ensure they are responsive
+            new ResizeObserver(() => {
+                 drawCodeTree('prefix-tree', { A: '0', B: '10', C: '110', D: '111' });
+                 drawCodeTree('nonprefix-tree', { A: '0', B: '01', C: '011', D: '111' });
+                 if(document.getElementById('huffman-tree-svg')) {
+                     huffmanBtn.click();
+                 }
+            }).observe(document.body);
+        });
+    </script>
+</body>
+</html>
