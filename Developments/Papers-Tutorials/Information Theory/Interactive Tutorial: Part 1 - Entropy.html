@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Information Theory Tutorial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0KOVEMQNogPSesLpvJxifG/KAGO24PMYI/b5VaaB5xGYBCvflgDbE" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0Co" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" xintegrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .katex { font-size: 1.1em; }
+        /* Simple transition for collapsible sections */
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">An Interactive Guide to Information Theory</h1>
+            <p class="mt-4 text-lg text-gray-600">Based on the lecture by Sam Cohen</p>
+        </header>
+
+        <!-- Section 1: Introduction -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold mb-4 border-b pb-2">1. What is Information Theory?</h2>
+            <p class="mb-6 text-lg">Information theory provides a mathematical framework for quantifying communication. This tutorial explores its core concepts, focusing on three fundamental questions:</p>
+            <div class="grid md:grid-cols-3 gap-6 text-center">
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                    <h3 class="text-xl font-semibold text-sky-700 mb-2">Quantifying Information</h3>
+                    <p>How can we describe and measure the amount of information we get from a signal?</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                    <h3 class="text-xl font-semibold text-sky-700 mb-2">Efficient Encoding</h3>
+                    <p>How can we efficiently encode data to store or transmit it using the minimum possible space?</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                    <h3 class="text-xl font-semibold text-sky-700 mb-2">Noisy Communication</h3>
+                    <p>How do we communicate reliably when the channel is noisy and might corrupt the message?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Randomness and Surprise -->
+        <section class="mb-12">
+             <h2 class="text-3xl font-bold mb-4 border-b pb-2">2. Surprise and Entropy</h2>
+             <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-2xl font-semibold mb-3">The Notion of "Surprise"</h3>
+                    <p class="mb-4">Information is tied to unpredictability. A completely predictable message contains no new information. The "surprise" of an event is a way to measure this unpredictability. It's defined by a few common-sense axioms:</p>
+                    <ul class="list-disc list-inside space-y-2 mb-4 bg-gray-100 p-4 rounded-lg">
+                        <li>Surprise depends continuously on an event's probability.</li>
+                        <li>More likely events are less surprising (surprise is decreasing in probability).</li>
+                        <li>The surprise of two independent events happening is the sum of their individual surprises.</li>
+                    </ul>
+                    <p class="mb-4">The only function that satisfies these properties is the negative logarithm of the probability. We define the surprise $S(A)$ of an event $A$ as:</p>
+                    <div class="bg-blue-100 text-blue-900 p-4 rounded-lg text-center font-mono">
+                        $S(A) = -\log_2(P(A))$
+                    </div>
+                     <p class="mt-4 text-sm text-gray-600">The unit of surprise (and entropy) is a "bit" when using base-2 logarithm.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Interactive Surprise Calculator</h3>
+                    <p class="text-center text-gray-600 mb-4">Move the slider to see how an event's surprise changes with its probability.</p>
+                    <label for="surprise-prob" class="block mb-2 font-medium">Probability of Event $P(A)$:</label>
+                    <input type="range" id="surprise-prob" min="0.01" max="1" step="0.01" value="0.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    <div class="text-center mt-4">
+                        <p class="text-lg">Current Probability: <span id="surprise-prob-value" class="font-bold">0.50</span></p>
+                        <p class="text-lg mt-2">Surprise $S(A)$: <span id="surprise-value" class="font-bold text-2xl text-indigo-600">1.00</span> bits</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Section 3: Entropy -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold mb-4 border-b pb-2">3. Entropy: The Average Surprise</h2>
+            <div class="grid md:grid-cols-2 gap-8 items-start">
+                <div>
+                    <p class="mb-4 text-lg">While "surprise" applies to a single outcome, **entropy** measures the average surprise of a random variable over all its possible outcomes. It quantifies the total uncertainty of the system.</p>
+                    <p class="mb-4">For a discrete random variable $X$ with possible outcomes $x \in \mathcal{X}$ and probability mass function (pmf) $p(x) = P(X=x)$, the entropy $H(X)$ is:</p>
+                    <div class="bg-green-100 text-green-900 p-4 rounded-lg text-center mb-4">
+                       $H(X) = -\sum_{x \in \mathcal{X}} p(x) \log_2 p(x)$
+                    </div>
+                    <p class="mb-4">This can also be seen as the expected value of the surprise:</p>
+                    <div class="bg-green-100 text-green-900 p-4 rounded-lg text-center">
+                       $H(X) = E[-\log_2 p(X)]$
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600">By convention, $0 \log 0 = 0$, since an event with zero probability never occurs and shouldn't contribute to the surprise.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                    <h3 class="text-xl font-semibold mb-2 text-center">Example: Entropy of a Biased Coin</h3>
+                    <p class="text-center text-gray-600 mb-4">A coin has two outcomes: Heads (H) and Tails (T). Let $P(H) = p$ and $P(T) = 1-p$. The entropy is $H(X) = -p\log_2(p) - (1-p)\log_2(1-p)$.</p>
+                    <p class="text-center text-gray-600 mb-4">Adjust the bias of the coin ($p$) and see how the entropy changes.</p>
+                    
+                    <canvas id="entropyChart"></canvas>
+                    
+                    <label for="coin-prob" class="block mb-1 font-medium mt-4">Probability of Heads ($p$):</label>
+                    <input type="range" id="coin-prob" min="0.001" max="0.999" step="0.001" value="0.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    <div class="text-center mt-2 text-lg">
+                        Current Value $p$: <span id="coin-prob-value" class="font-bold">0.500</span>
+                    </div>
+                     <p class="mt-4 text-center text-gray-600">Notice that entropy is maximized when uncertainty is highest ($p=0.5$) and zero when the outcome is certain ($p=0$ or $p=1$).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Related Quantities -->
+        <section class="mb-12">
+             <h2 class="text-3xl font-bold mb-4 border-b pb-2">4. Divergence and Mutual Information</h2>
+             <div class="space-y-8">
+                <!-- KL Divergence -->
+                <div class="grid md:grid-cols-2 gap-8 items-start">
+                    <div>
+                         <h3 class="text-2xl font-semibold mb-3">Kullback-Leibler (KL) Divergence</h3>
+                         <p class="mb-4">KL Divergence, or relative entropy, measures how one probability distribution $P$ diverges from a second, expected probability distribution $Q$. It's a measure of the "distance" between two distributions.</p>
+                          <div class="bg-purple-100 text-purple-900 p-4 rounded-lg text-center mb-4">
+                           $D_{KL}(P || Q) = \sum_{x \in \mathcal{X}} P(x) \log_2\left(\frac{P(x)}{Q(x)}\right)$
+                         </div>
+                         <p class="font-semibold">Key Properties:</p>
+                         <ul class="list-disc list-inside space-y-1 bg-gray-100 p-4 rounded-lg">
+                             <li>$D_{KL}(P || Q) \ge 0$.</li>
+                             <li>$D_{KL}(P || Q) = 0$ if and only if $P = Q$.</li>
+                             <li>It is **not symmetric**: $D_{KL}(P || Q) \neq D_{KL}(Q || P)$ in general. This means it's not a true metric.</li>
+                         </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Interactive KL Divergence</h3>
+                        <p class="text-center text-gray-600 mb-4">Imagine a 3-sided die. Define two different probability distributions, $P$ and $Q$, for the outcomes {1, 2, 3} and see how they differ.</p>
+                        <!-- P Distribution -->
+                        <div class="mb-4">
+                            <p class="font-bold text-center">Distribution P</p>
+                            <div class="grid grid-cols-3 gap-2 text-center">
+                                <div><label>P(1)</label><input type="number" class="kl-p w-full border rounded p-1 text-center" value="0.5" step="0.1" min="0" max="1"></div>
+                                <div><label>P(2)</label><input type="number" class="kl-p w-full border rounded p-1 text-center" value="0.3" step="0.1" min="0" max="1"></div>
+                                <div><label>P(3)</label><input type="number" class="kl-p w-full border rounded p-1 text-center" value="0.2" step="0.1" min="0" max="1"></div>
+                            </div>
+                        </div>
+                        <!-- Q Distribution -->
+                        <div class="mb-4">
+                            <p class="font-bold text-center">Distribution Q</p>
+                            <div class="grid grid-cols-3 gap-2 text-center">
+                                <div><label>Q(1)</label><input type="number" class="kl-q w-full border rounded p-1 text-center" value="0.1" step="0.1" min="0" max="1"></div>
+                                <div><label>Q(2)</label><input type="number" class="kl-q w-full border rounded p-1 text-center" value="0.2" step="0.1" min="0" max="1"></div>
+                                <div><label>Q(3)</label><input type="number" class="kl-q w-full border rounded p-1 text-center" value="0.7" step="0.1" min="0" max="1"></div>
+                            </div>
+                        </div>
+                         <div id="kl-warning" class="text-red-500 text-center mb-2 hidden">Probabilities must sum to 1.</div>
+                         <div class="text-center mt-4 space-y-2 text-lg">
+                            <p>$D_{KL}(P || Q) = $ <span id="d_pq" class="font-bold text-purple-600">...</span></p>
+                            <p>$D_{KL}(Q || P) = $ <span id="d_qp" class="font-bold text-purple-600">...</span></p>
+                         </div>
+                    </div>
+                </div>
+
+                <!-- Mutual Information -->
+                <div class="grid md:grid-cols-2 gap-8 items-start">
+                    <div>
+                        <h3 class="text-2xl font-semibold mb-3">Mutual Information</h3>
+                        <p class="mb-4">Mutual Information $I(X;Y)$ between two random variables $X$ and $Y$ measures the reduction in uncertainty about $X$ that results from knowing $Y$. It quantifies their dependency.</p>
+                        <p class="mb-4">It's the KL divergence between the joint distribution $P(X,Y)$ and the product of the marginals $P(X)P(Y)$.</p>
+                        <div class="bg-teal-100 text-teal-900 p-4 rounded-lg text-center mb-4">
+                           $I(X;Y) = D_{KL}(P(X,Y) || P(X)P(Y))$
+                        </div>
+                        <p class="mb-4">This leads to a more intuitive formula relating the entropies:</p>
+                        <div class="bg-teal-100 text-teal-900 p-4 rounded-lg text-center mb-4">
+                           $I(X;Y) = H(X) + H(Y) - H(X,Y)$
+                        </div>
+                        <p>If $X$ and $Y$ are independent, $H(X,Y) = H(X) + H(Y)$, and their mutual information is 0. If they are perfectly correlated, knowing one completely determines the other, and $I(X;Y) = H(X) = H(Y)$.</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Interactive Mutual Information</h3>
+                        <p class="text-center text-gray-600 mb-4">Consider two variables: $X$ = "Weather" (Sunny/Rainy) and $Y$ = "Activity" (Beach/Cinema). Adjust the joint probabilities in the table and see how the mutual information changes.</p>
+                        <table class="w-full text-center border-collapse mb-4">
+                            <thead>
+                                <tr>
+                                    <th class="border p-2">P(X,Y)</th>
+                                    <th class="border p-2">Y = Beach</th>
+                                    <th class="border p-2">Y = Cinema</th>
+                                    <th class="border p-2 bg-gray-100">P(X)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border p-2 font-bold">X = Sunny</td>
+                                    <td class="border p-1"><input type="number" class="mi-p w-full text-center" id="p_sb" value="0.4" step="0.05" min="0" max="1"></td>
+                                    <td class="border p-1"><input type="number" class="mi-p w-full text-center" id="p_sc" value="0.1" step="0.05" min="0" max="1"></td>
+                                    <td class="border p-2 bg-gray-100" id="px_s">0.5</td>
+                                </tr>
+                                 <tr>
+                                    <td class="border p-2 font-bold">X = Rainy</td>
+                                    <td class="border p-1"><input type="number" class="mi-p w-full text-center" id="p_rb" value="0.1" step="0.05" min="0" max="1"></td>
+                                    <td class="border p-1"><input type="number" class="mi-p w-full text-center" id="p_rc" value="0.4" step="0.05" min="0" max="1"></td>
+                                    <td class="border p-2 bg-gray-100" id="px_r">0.5</td>
+                                </tr>
+                            </tbody>
+                             <tfoot>
+                                <tr>
+                                    <td class="border p-2 bg-gray-100 font-bold">P(Y)</td>
+                                    <td class="border p-2 bg-gray-100" id="py_b">0.5</td>
+                                    <td class="border p-2 bg-gray-100" id="py_c">0.5</td>
+                                    <td class="border p-2 bg-gray-200 font-bold" id="p_total">1.0</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <div class="text-center mt-4 space-y-2 text-lg">
+                            <p>$H(X) = $ <span id="h_x" class="font-bold">...</span> bits</p>
+                            <p>$H(Y) = $ <span id="h_y" class="font-bold">...</span> bits</p>
+                            <p>$H(X,Y) = $ <span id="h_xy" class="font-bold">...</span> bits</p>
+                            <p class="text-xl mt-2">$I(X;Y) = $ <span id="i_xy" class="font-bold text-2xl text-teal-600">...</span> bits</p>
+                        </div>
+                    </div>
+                </div>
+             </div>
+        </section>
+
+    </div>
+
+    <footer class="text-center p-8 mt-8 border-t bg-gray-100">
+        <p class="text-gray-600">An interactive learning experience by Gemini.</p>
+    </footer>
+
+    <script>
+        // This script will run after the page content is loaded, ensuring all elements are available.
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Render all math expressions in the document body.
+            // This function finds and replaces all LaTeX math expressions with rendered HTML.
+            renderMathInElement(document.body, {
+                // customised options
+                // • auto-render specific keys, e.g.:
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                // • rendering keys, e.g.:
+                throwOnError : false
+            });
+
+            // Helper function for log base 2, handling the 0 log 0 = 0 case
+            function log2(n) {
+                if (n === 0) return 0;
+                return Math.log2(n);
+            }
+            
+            // --- Surprise Calculator ---
+            const surpriseProbSlider = document.getElementById('surprise-prob');
+            const surpriseProbValue = document.getElementById('surprise-prob-value');
+            const surpriseValue = document.getElementById('surprise-value');
+
+            function updateSurprise() {
+                const p = parseFloat(surpriseProbSlider.value);
+                surpriseProbValue.textContent = p.toFixed(2);
+                const surprise = -log2(p);
+                surpriseValue.textContent = surprise.toFixed(2);
+            }
+            surpriseProbSlider.addEventListener('input', updateSurprise);
+            updateSurprise();
+
+
+            // --- Entropy Chart ---
+            const coinProbSlider = document.getElementById('coin-prob');
+            const coinProbValue = document.getElementById('coin-prob-value');
+            const ctx = document.getElementById('entropyChart').getContext('2d');
+            let entropyChart;
+
+            function calculateEntropy(p) {
+                if (p <= 0 || p >= 1) return 0;
+                return -p * log2(p) - (1 - p) * log2(1 - p);
+            }
+
+            function createEntropyChart() {
+                const labels = [];
+                const data = [];
+                for (let i = 0; i <= 100; i++) {
+                    const p = i / 100.0;
+                    labels.push(p.toFixed(2));
+                    data.push(calculateEntropy(p));
+                }
+                
+                const currentP = parseFloat(coinProbSlider.value);
+
+                entropyChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Entropy H(p)',
+                            data: data,
+                            borderColor: 'rgb(79, 70, 229)',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            pointRadius: 0,
+                            tension: 0.1
+                        }, {
+                            label: 'Current p',
+                            data: [{x: currentP.toFixed(3), y: calculateEntropy(currentP)}],
+                            pointBackgroundColor: 'rgb(220, 38, 38)',
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            type: 'scatter'
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom',
+                                title: { display: true, text: 'Probability p' }
+                            },
+                            y: { 
+                                beginAtZero: true, 
+                                max: 1.05,
+                                title: { display: true, text: 'Entropy (bits)' } 
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        },
+                        animation: {
+                            duration: 0
+                        }
+                    }
+                });
+            }
+
+            function updateEntropyChart() {
+                const p = parseFloat(coinProbSlider.value);
+                coinProbValue.textContent = p.toFixed(3);
+                entropyChart.data.datasets[1].data = [{x: p, y: calculateEntropy(p)}];
+                entropyChart.update();
+            }
+
+            coinProbSlider.addEventListener('input', updateEntropyChart);
+            createEntropyChart();
+
+
+            // --- KL Divergence Calculator ---
+            const klPInputs = document.querySelectorAll('.kl-p');
+            const klQInputs = document.querySelectorAll('.kl-q');
+            const d_pq_el = document.getElementById('d_pq');
+            const d_qp_el = document.getElementById('d_qp');
+            const klWarning = document.getElementById('kl-warning');
+
+            function calculateKL() {
+                const p = Array.from(klPInputs).map(el => parseFloat(el.value));
+                const q = Array.from(klQInputs).map(el => parseFloat(el.value));
+
+                const sumP = p.reduce((a, b) => a + b, 0);
+                const sumQ = q.reduce((a, b) => a + b, 0);
+                
+                let valid = true;
+                if (Math.abs(sumP - 1.0) > 0.01 || Math.abs(sumQ - 1.0) > 0.01) {
+                     klWarning.classList.remove('hidden');
+                     valid = false;
+                } else {
+                     klWarning.classList.add('hidden');
+                }
+
+                if (!valid) {
+                    d_pq_el.textContent = 'Invalid';
+                    d_qp_el.textContent = 'Invalid';
+                    return;
+                }
+                
+                let d_pq = 0;
+                for (let i = 0; i < p.length; i++) {
+                    if (p[i] > 0) { // Avoid log(0/x)
+                        if (q[i] === 0) { // P(x) > 0 but Q(x) = 0 -> infinite divergence
+                            d_pq = Infinity;
+                            break;
+                        }
+                        d_pq += p[i] * log2(p[i] / q[i]);
+                    }
+                }
+
+                let d_qp = 0;
+                for (let i = 0; i < q.length; i++) {
+                     if (q[i] > 0) {
+                        if (p[i] === 0) {
+                            d_qp = Infinity;
+                            break;
+                        }
+                        d_qp += q[i] * log2(q[i] / p[i]);
+                    }
+                }
+                
+                d_pq_el.textContent = isFinite(d_pq) ? d_pq.toFixed(4) : '∞';
+                d_qp_el.textContent = isFinite(d_qp) ? d_qp.toFixed(4) : '∞';
+            }
+
+            klPInputs.forEach(el => el.addEventListener('input', calculateKL));
+            klQInputs.forEach(el => el.addEventListener('input', calculateKL));
+            calculateKL();
+            
+            // --- Mutual Information Calculator ---
+            const miInputs = document.querySelectorAll('.mi-p');
+
+            function calculateMI() {
+                const p_sb = parseFloat(document.getElementById('p_sb').value);
+                const p_sc = parseFloat(document.getElementById('p_sc').value);
+                const p_rb = parseFloat(document.getElementById('p_rb').value);
+                const p_rc = parseFloat(document.getElementById('p_rc').value);
+
+                // Calculate marginals
+                const px_s = p_sb + p_sc;
+                const px_r = p_rb + p_rc;
+                const py_b = p_sb + p_rb;
+                const py_c = p_sc + p_rc;
+                
+                document.getElementById('px_s').textContent = px_s.toFixed(2);
+                document.getElementById('px_r').textContent = px_r.toFixed(2);
+                document.getElementById('py_b').textContent = py_b.toFixed(2);
+                document.getElementById('py_c').textContent = py_c.toFixed(2);
+
+                const total = px_s + px_r;
+                const totalEl = document.getElementById('p_total');
+                totalEl.textContent = total.toFixed(2);
+                 if (Math.abs(total - 1.0) > 0.01) {
+                    totalEl.classList.add('bg-red-300');
+                    totalEl.classList.remove('bg-gray-200');
+                } else {
+                    totalEl.classList.remove('bg-red-300');
+                    totalEl.classList.add('bg-gray-200');
+                }
+
+
+                // Calculate entropies
+                const h_x = - (px_s * log2(px_s) + px_r * log2(px_r));
+                const h_y = - (py_b * log2(py_b) + py_c * log2(py_c));
+                const h_xy = - (p_sb * log2(p_sb) + p_sc * log2(p_sc) + p_rb * log2(p_rb) + p_rc * log2(p_rc));
+
+                const i_xy = h_x + h_y - h_xy;
+
+                document.getElementById('h_x').textContent = h_x.toFixed(4);
+                document.getElementById('h_y').textContent = h_y.toFixed(4);
+                document.getElementById('h_xy').textContent = h_xy.toFixed(4);
+                document.getElementById('i_xy').textContent = i_xy.toFixed(4);
+            }
+            
+            miInputs.forEach(el => el.addEventListener('input', calculateMI));
+            calculateMI();
+        });
+    </script>
+</body>
+</html>
