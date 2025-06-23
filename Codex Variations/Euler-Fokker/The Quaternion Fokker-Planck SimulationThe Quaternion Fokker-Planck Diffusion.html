@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial Part 7: The Quaternion Fokker-Planck Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
+        #renderer-container { cursor: grab; }
+        #renderer-container:active { cursor: grabbing; }
+        /* Removed faulty custom slider styles to ensure they are always visible */
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 flex flex-col md:flex-row h-screen overflow-hidden">
+
+    <!-- Control & Explanation Panel -->
+    <div class="w-full md:w-1/3 xl:w-1/4 h-2/5 md:h-full bg-gray-800 p-6 overflow-y-auto">
+        <h1 class="text-3xl font-bold text-white mb-4">Tutorial: The Final Chapter</h1>
+        <h2 class="text-xl font-semibold text-amber-400 mb-4">Part 7: The Cloud of Meaning</h2>
+        
+        <div class="prose prose-invert text-gray-300">
+            <p>This final simulation visualizes the <strong class="text-white">Quaternion Fokker-Planck Equation (QFPE)</strong>. We are no longer dealing with single paths, but a <strong class="text-white">probability distribution</strong>—a cloud of thousands of possibilities searching for a specific meaning.</p>
+            
+            <h3 class="font-semibold text-white mt-6">Understanding the QFPE</h3>
+            <p>The equation `∂P/∂t = -∇⋅(A∘P) + D∇²P` describes how the cloud evolves:</p>
+            <ul>
+                <li><strong class="text-blue-300">Drift (-∇⋅(A∘P)):</strong> This is the pull of an idea. You define a <strong class="text-blue-300">Target Meaning</strong> with the sliders. The simulation creates an "attractor" that pulls the cloud's position and orientation toward this target.</li>
+                <li><strong class="text-purple-300">Diffusion (D∇²P):</strong> This represents randomness, exploration, or uncertainty. It makes the particles "jiggle" and prevents the cloud from collapsing, allowing it to explore the space around the target.</li>
+            </ul>
+            
+            <h3 class="font-semibold text-white mt-6">Visualizing Orientation</h3>
+            <p>Each point in the cloud has an internal orientation (a quaternion). This is visualized by its <strong class="text-white">color</strong>. A reddish point is oriented along the X-axis (Arousal), greenish along Y (Valence), and bluish along Z (Complexity).</p>
+
+            <h3 class="font-semibold text-white mt-6">Your Goal:</h3>
+            <p>Set a "Target Meaning" and click "Start Simulation". Watch how the cloud, initially random, "drifts" towards your target. Use the "Reset Simulation" button to start over with new parameters.</p>
+        </div>
+        
+        <div class="mt-6 flex flex-col gap-4">
+            <!-- Target Meaning Sliders -->
+            <div><label class="block text-sm font-medium text-red-400">Target Arousal</label><input id="arousal-slider" type="range" min="-1" max="1" value="0.7" step="0.01" class="w-full"></div>
+            <div><label class="block text-sm font-medium text-green-400">Target Valence</label><input id="valence-slider" type="range" min="-1" max="1" value="0.5" step="0.01" class="w-full"></div>
+            <div><label class="block text-sm font-medium text-blue-400">Target Complexity</label><input id="complexity-slider" type="range" min="-1" max="1" value="0.2" step="0.01" class="w-full"></div>
+            <hr class="border-gray-600"/>
+            <!-- Simulation Parameter Sliders -->
+            <div><label class="block text-sm font-medium text-blue-300">Drift Strength</label><input id="drift-slider" type="range" min="0" max="0.05" value="0.01" step="0.001" class="w-full"></div>
+            <div><label class="block text-sm font-medium text-purple-300">Diffusion Amount</label><input id="diffusion-slider" type="range" min="0" max="0.1" value="0.02" step="0.001" class="w-full"></div>
+            <div class="grid grid-cols-2 gap-2">
+                <button id="start-sim-btn" class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition">Start Simulation</button>
+                <button id="reset-sim-btn" class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold transition">Reset Simulation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3D Interactive View -->
+    <div class="flex-grow w-full md:w-2/3 xl:w-3/4 h-3/5 md:h-full relative">
+        <div id="renderer-container" class="absolute top-0 left-0 w-full h-full"></div>
+    </div>
+
+    <script>
+        class MusicalQuaternion{constructor(w=1,x=0,y=0,z=0){this.w=w;this.x=x;this.y=y;this.z=z}multiply(q){const t=this,e=q;return new MusicalQuaternion(t.w*e.w-t.x*e.x-t.y*e.y-t.z*e.z,t.w*e.x+t.x*e.w+t.y*e.z-t.z*e.y,t.w*e.y-t.x*e.z+t.y*e.w+t.z*e.x,t.w*e.z+t.x*e.y-t.y*e.x+t.z*e.w)}normalize(){const t=Math.sqrt(this.w**2+this.x**2+this.y**2+this.z**2);return t>0&&(this.w/=t,this.x/=t,this.y/=t,this.z/=t),this}slerp(q,t){let e=this.w*q.w+this.x*q.x+this.y*q.y+this.z*q.z;e<0&&(this.w=-this.w,this.x=-this.x,this.y=-this.y,this.z=-this.z,e=-e);if(1-e>1e-6){const o=Math.acos(e),n=Math.sin(o),a=Math.sin((1-t)*o)/n,s=Math.sin(t*o)/n;this.w=a*this.w+s*q.w,this.x=a*this.x+s*q.x,this.y=a*this.y+s*q.y,this.z=a*this.z+s*q.z}return this}}
+
+        let scene, camera, renderer, controls, simulationRunning = false;
+        const PARTICLE_COUNT = 5000;
+        let particles = [];
+        let particleGeometry, particleMaterial, particleSystem;
+        let targetObject, targetQuaternion = new MusicalQuaternion();
+
+        const arousalSlider = document.getElementById('arousal-slider');
+        const valenceSlider = document.getElementById('valence-slider');
+        const complexitySlider = document.getElementById('complexity-slider');
+        const driftSlider = document.getElementById('drift-slider');
+        const diffusionSlider = document.getElementById('diffusion-slider');
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x111827);
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 10);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('renderer-container').appendChild(renderer.domElement);
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            scene.add(new THREE.AmbientLight(0xcccccc, 0.5));
+            scene.add(new THREE.PointLight(0xffffff, 0.8));
+
+            createParticleSystem();
+            createTargetObject();
+            
+            animate();
+            
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('start-sim-btn').addEventListener('click', toggleSimulation);
+            document.getElementById('reset-sim-btn').addEventListener('click', resetSimulation);
+            [arousalSlider, valenceSlider, complexitySlider].forEach(s => s.addEventListener('input', updateTarget));
+        }
+
+        function createParticleSystem() {
+            particleGeometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(PARTICLE_COUNT * 3);
+            const colors = new Float32Array(PARTICLE_COUNT * 3);
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            particleMaterial = new THREE.PointsMaterial({ size: 0.1, vertexColors: true, transparent: true, opacity: 0.8 });
+            particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+            scene.add(particleSystem);
+            
+            // Initial population
+            resetSimulation();
+        }
+        
+        function resetSimulation() {
+            simulationRunning = false;
+            document.getElementById('start-sim-btn').textContent = "Start Simulation";
+
+            const positions = particleGeometry.getAttribute('position').array;
+            const colors = particleGeometry.getAttribute('color').array;
+            particles = []; // Clear the old particles array
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const pos = new THREE.Vector3((Math.random() - 0.5) * 15, (Math.random() - 0.5) * 15, (Math.random() - 0.5) * 15);
+                const quat = new MusicalQuaternion(Math.random()*2-1, Math.random()*2-1, Math.random()*2-1, Math.random()*2-1).normalize();
+                particles.push({ position: pos, quaternion: quat });
+                
+                positions[i * 3] = pos.x;
+                positions[i * 3 + 1] = pos.y;
+                positions[i * 3 + 2] = pos.z;
+
+                colors[i * 3] = Math.abs(quat.x);
+                colors[i * 3 + 1] = Math.abs(quat.y);
+                colors[i * 3 + 2] = Math.abs(quat.z);
+            }
+            particleGeometry.getAttribute('position').needsUpdate = true;
+            particleGeometry.getAttribute('color').needsUpdate = true;
+        }
+
+
+        function createTargetObject() {
+            targetObject = new THREE.Object3D();
+            const geo = new THREE.SphereGeometry(0.3, 16, 12);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
+            const sphere = new THREE.Mesh(geo, mat);
+            const axes = new THREE.AxesHelper(1);
+            targetObject.add(sphere);
+            targetObject.add(axes);
+            scene.add(targetObject);
+            updateTarget();
+        }
+
+        function updateTarget() {
+            const arousal = parseFloat(arousalSlider.value);
+            const valence = parseFloat(valenceSlider.value);
+            const complexity = parseFloat(complexitySlider.value);
+
+            targetObject.position.set(arousal * 4, valence * 4, complexity * 4);
+            
+            // Create target quaternion from conceptual axes
+            const qx = new MusicalQuaternion(Math.cos(arousal * Math.PI / 4), Math.sin(arousal * Math.PI / 4), 0, 0);
+            const qy = new MusicalQuaternion(Math.cos(valence * Math.PI / 4), 0, Math.sin(valence * Math.PI / 4), 0);
+            const qz = new MusicalQuaternion(Math.cos(complexity * Math.PI / 4), 0, 0, Math.sin(complexity * Math.PI / 4));
+            targetQuaternion = qx.multiply(qy).multiply(qz).normalize();
+            
+            // Update visual target orientation
+            const threeQuat = new THREE.Quaternion(targetQuaternion.x, targetQuaternion.y, targetQuaternion.z, targetQuaternion.w);
+            targetObject.setRotationFromQuaternion(threeQuat);
+        }
+
+        function toggleSimulation() {
+            simulationRunning = !simulationRunning;
+            document.getElementById('start-sim-btn').textContent = simulationRunning ? "Pause Simulation" : "Resume Simulation";
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            if (simulationRunning) {
+                const positions = particleGeometry.getAttribute('position').array;
+                const colors = particleGeometry.getAttribute('color').array;
+                const drift = parseFloat(driftSlider.value);
+                const diffusion = parseFloat(diffusionSlider.value);
+
+                for (let i = 0; i < PARTICLE_COUNT; i++) {
+                    const p = particles[i];
+                    
+                    // --- Drift ---
+                    p.position.lerp(targetObject.position, drift);
+                    p.quaternion.slerp(targetQuaternion, drift);
+                    
+                    // --- Diffusion ---
+                    p.position.x += (Math.random() - 0.5) * diffusion;
+                    p.position.y += (Math.random() - 0.5) * diffusion;
+                    p.position.z += (Math.random() - 0.5) * diffusion;
+                    
+                    const randomRotation = new MusicalQuaternion(1, (Math.random()-0.5)*diffusion, (Math.random()-0.5)*diffusion, (Math.random()-0.5)*diffusion).normalize();
+                    p.quaternion = randomRotation.multiply(p.quaternion).normalize();
+
+                    // Update buffer arrays
+                    positions[i * 3] = p.position.x;
+                    positions[i * 3 + 1] = p.position.y;
+                    positions[i * 3 + 2] = p.position.z;
+                    
+                    // Map quaternion to color
+                    colors[i * 3] = Math.abs(p.quaternion.x);
+                    colors[i * 3 + 1] = Math.abs(p.quaternion.y);
+                    colors[i * 3 + 2] = Math.abs(p.quaternion.z);
+                }
+                particleGeometry.getAttribute('position').needsUpdate = true;
+                particleGeometry.getAttribute('color').needsUpdate = true;
+            }
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('renderer-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+        
+        init();
+    </script>
+</body>
+</html>
