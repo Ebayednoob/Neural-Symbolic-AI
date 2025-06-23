@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Tonality Diamond with Path Logging</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior: none;
+        }
+        .diamond-node {
+            transition: all 0.2s ease-in-out;
+            position: absolute; /* Ensure nodes are on top of SVG lines */
+            z-index: 5;
+        }
+        .diamond-node:hover {
+            transform: scale(1.1);
+            background-color: #f59e0b; /* amber-500 */
+        }
+        .diamond-node.active {
+            transform: scale(1.15);
+            background-color: #ef4444; /* red-500 */
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.7);
+            z-index: 10;
+        }
+        #path-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicks to go through to the nodes */
+            z-index: 1;
+        }
+        .path-log-item {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8">
+        <h1 class="text-3xl font-bold text-center text-white mb-2">Part 2.1: Pathfinding on the Diamond</h1>
+        <p class="text-center text-gray-400 mb-6">Click nodes to build a melodic/harmonic path. See the connections form on the lattice.</p>
+
+        <!-- Controls -->
+        <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-8">
+            <div class="flex items-center gap-2">
+                <label for="limit-selector" class="font-medium text-gray-300">Odd Limit:</label>
+                <select id="limit-selector" class="bg-gray-700 border border-gray-600 text-white rounded-lg p-2">
+                    <option value="3">3-Limit</option>
+                    <option value="5">5-Limit</option>
+                    <option value="7" selected>7-Limit</option>
+                    <option value="9">9-Limit</option>
+                    <option value="11">11-Limit</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                 <label for="base-freq" class="font-medium text-gray-300">Base Freq (Hz):</label>
+                 <input type="number" id="base-freq" value="261.63" class="bg-gray-700 border border-gray-600 text-white rounded-lg p-2 w-24">
+            </div>
+             <button id="start-audio" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition">
+                Start Audio
+            </button>
+            <button id="reset-path" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold transition">
+                Reset Path
+            </button>
+        </div>
+
+        <!-- Diamond Container -->
+        <div id="diamond-container" class="relative w-full aspect-square max-w-xl mx-auto mb-8 flex items-center justify-center">
+            <!-- SVG for drawing path lines -->
+            <svg id="path-lines"></svg>
+            <!-- Nodes will be generated here by JavaScript -->
+        </div>
+
+        <!-- Information Panel -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="info-panel" class="bg-gray-900/50 rounded-lg p-4 min-h-[140px] border border-gray-700">
+                <h2 class="text-xl font-semibold mb-2 text-white">Selected Node Data</h2>
+                <p id="info-text" class="text-gray-400">Click a node to see its details.</p>
+                <div id="info-details" class="hidden grid grid-cols-2 gap-2 text-center">
+                     <div>
+                        <p class="text-sm text-gray-500">Ratio</p>
+                        <p id="info-ratio" class="text-lg font-mono font-bold text-amber-400"></p>
+                    </div>
+                     <div>
+                        <p class="text-sm text-gray-500">Frequency</p>
+                        <p id="info-freq" class="text-lg font-mono font-bold text-amber-400"></p>
+                    </div>
+                     <div>
+                        <p class="text-sm text-gray-500">Otonal Root</p>
+                        <p id="info-otonal" class="text-lg font-mono font-bold text-cyan-400"></p>
+                    </div>
+                     <div>
+                        <p class="text-sm text-gray-500">Utonal Root</p>
+                        <p id="info-utonal" class="text-lg font-mono font-bold text-fuchsia-400"></p>
+                    </div>
+                </div>
+            </div>
+            <!-- Path Log -->
+            <div id="path-log-container" class="bg-gray-900/50 rounded-lg p-4 min-h-[140px] border border-gray-700">
+                 <h2 class="text-xl font-semibold mb-2 text-white">Selected Path</h2>
+                 <div id="path-log" class="flex flex-wrap gap-2 items-center text-sm">
+                    <p id="path-text" class="text-gray-400">Your selected path will appear here...</p>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const limitSelector = document.getElementById('limit-selector');
+        const baseFreqInput = document.getElementById('base-freq');
+        const diamondContainer = document.getElementById('diamond-container');
+        const startAudioButton = document.getElementById('start-audio');
+        const resetPathButton = document.getElementById('reset-path');
+        const pathLinesSVG = document.getElementById('path-lines');
+        const pathLogContainer = document.getElementById('path-log');
+        const pathLogText = document.getElementById('path-text');
+
+        // Info Panel Elements
+        const infoPanel = document.getElementById('info-panel');
+        const infoText = document.getElementById('info-text');
+        const infoDetails = document.getElementById('info-details');
+        const infoRatio = document.getElementById('info-ratio');
+        const infoFreq = document.getElementById('info-freq');
+        const infoOtonal = document.getElementById('info-otonal');
+        const infoUtonal = document.getElementById('info-utonal');
+        
+        // --- State ---
+        let synth;
+        let audioReady = false;
+        let path = [];
+        let nodeElements = new Map(); // Maps ratio string to its element
+        
+        // --- Audio Setup ---
+        startAudioButton.addEventListener('click', async () => {
+            if (audioReady) return;
+            await Tone.start();
+            synth = new Tone.Synth({
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.01, decay: 0.2, sustain: 0.2, release: 0.5 }
+            }).toDestination();
+            audioReady = true;
+            startAudioButton.textContent = 'Audio Ready';
+            startAudioButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            startAudioButton.classList.add('bg-green-600');
+            console.log('Audio context started.');
+        });
+        
+        // --- Core Logic ---
+        function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+        function reduceToOctave(num, den) {
+            let val = num / den;
+            while (val >= 2) val /= 2;
+            while (val < 1) val *= 2;
+            let multiplier = 1;
+            while (Math.abs((val * multiplier) % 1) > 1e-9) {
+                 multiplier *= 10;
+                 if (multiplier > 10000) break; 
+            }
+             let n = Math.round(val * multiplier);
+             let d = multiplier;
+             const commonDivisor = gcd(n, d);
+             return { num: n / commonDivisor, den: d / commonDivisor };
+        }
+
+        function generateDiamond(limit) {
+            const oddNumbers = [];
+            for (let i = 1; i <= limit; i += 2) oddNumbers.push(i);
+            const diamondData = [];
+            const existingRatios = new Set();
+            for (let i = 0; i < oddNumbers.length; i++) {
+                for (let j = 0; j < oddNumbers.length; j++) {
+                    const utonalRoot = oddNumbers[i];
+                    const otonalRoot = oddNumbers[j];
+                    const reduced = reduceToOctave(otonalRoot, utonalRoot);
+                    const ratioString = `${reduced.num}/${reduced.den}`;
+                    if (existingRatios.has(ratioString)) continue;
+                    existingRatios.add(ratioString);
+                    diamondData.push({
+                        label: ratioString,
+                        ratio: reduced,
+                        otonalRoot: {num: otonalRoot, den: 1},
+                        utonalRoot: {num: 1, den: utonalRoot},
+                        gridPos: { x: j, y: i }
+                    });
+                }
+            }
+            return diamondData;
+        }
+
+        function drawDiamond() {
+            resetPath(); // Clear path when redrawing
+            const limit = parseInt(limitSelector.value);
+            const diamondData = generateDiamond(limit);
+            diamondContainer.querySelectorAll('.diamond-node').forEach(n => n.remove()); // Clear old nodes
+            nodeElements.clear();
+            
+            const containerSize = diamondContainer.offsetWidth;
+            const nodeSize = Math.max(20, Math.min(60, containerSize / (limit * 1.5)));
+            const angle = -Math.PI / 4;
+            const cosA = Math.cos(angle);
+            const sinA = Math.sin(angle);
+            const numSteps = (limit + 1) / 2;
+            const stepSize = containerSize / numSteps / 1.5;
+
+            diamondData.forEach(node => {
+                const centeredX = (node.gridPos.x - (numSteps - 1) / 2) * stepSize;
+                const centeredY = (node.gridPos.y - (numSteps - 1) / 2) * stepSize;
+                const rotatedX = centeredX * cosA - centeredY * sinA;
+                const rotatedY = centeredX * sinA + centeredY * cosA;
+                const finalX = rotatedX + containerSize / 2;
+                const finalY = rotatedY + containerSize / 2;
+                
+                // Store final position in the node data itself for easy lookup
+                node.pixelPos = { x: finalX, y: finalY };
+
+                const nodeEl = document.createElement('div');
+                nodeEl.className = 'diamond-node flex items-center justify-center bg-gray-700 rounded-full cursor-pointer border-2 border-gray-600';
+                nodeEl.style.width = `${nodeSize}px`;
+                nodeEl.style.height = `${nodeSize}px`;
+                nodeEl.style.left = `calc(${finalX}px - ${nodeSize/2}px)`;
+                nodeEl.style.top = `calc(${finalY}px - ${nodeSize/2}px)`;
+                
+                const label = document.createElement('span');
+                label.className = 'text-xs font-mono font-bold';
+                label.textContent = node.label;
+                nodeEl.appendChild(label);
+                
+                nodeEl.dataset.nodeData = JSON.stringify(node);
+                nodeEl.addEventListener('click', handleNodeClick);
+                
+                diamondContainer.appendChild(nodeEl);
+                nodeElements.set(node.label, nodeEl);
+            });
+        }
+        
+        function updatePathDisplay() {
+            // Update the text log
+            pathLogContainer.innerHTML = '';
+            if (path.length === 0) {
+                 pathLogContainer.appendChild(pathLogText);
+                 pathLogText.classList.remove('hidden');
+            } else {
+                 pathLogText.classList.add('hidden');
+                 path.forEach((nodeData, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'path-log-item bg-gray-700 text-amber-400 font-mono rounded px-2 py-1';
+                    item.textContent = nodeData.label;
+                    pathLogContainer.appendChild(item);
+
+                    if (index < path.length - 1) {
+                         const arrow = document.createElement('span');
+                         arrow.className = 'text-gray-500';
+                         arrow.textContent = '→';
+                         pathLogContainer.appendChild(arrow);
+                    }
+                 });
+            }
+
+            // Update the SVG lines
+            pathLinesSVG.innerHTML = '';
+            for (let i = 0; i < path.length - 1; i++) {
+                const startNode = path[i];
+                const endNode = path[i+1];
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', startNode.pixelPos.x);
+                line.setAttribute('y1', startNode.pixelPos.y);
+                line.setAttribute('x2', endNode.pixelPos.x);
+                line.setAttribute('y2', endNode.pixelPos.y);
+                line.setAttribute('stroke', '#f59e0b'); // amber-500
+                line.setAttribute('stroke-width', '3');
+                line.setAttribute('stroke-linecap', 'round');
+                pathLinesSVG.appendChild(line);
+            }
+        }
+
+        function resetPath() {
+             path.forEach(nodeData => {
+                const el = nodeElements.get(nodeData.label);
+                if (el) el.classList.remove('active');
+            });
+            path = [];
+            updatePathDisplay();
+        }
+
+        // --- Event Handlers ---
+        let activeNodeEl = null;
+
+        function handleNodeClick(event) {
+            if (!audioReady) {
+                alert("Please click 'Start Audio' first!");
+                return;
+            }
+
+            const nodeEl = event.currentTarget;
+            const nodeData = JSON.parse(nodeEl.dataset.nodeData);
+            path.push(nodeData);
+            
+            // Play sound
+            const baseFreq = parseFloat(baseFreqInput.value);
+            const frequency = baseFreq * (nodeData.ratio.num / nodeData.ratio.den);
+            synth.triggerAttackRelease(frequency, '0.5');
+
+            // Update UI
+            if (activeNodeEl) activeNodeEl.classList.remove('active');
+            nodeEl.classList.add('active');
+            activeNodeEl = nodeEl;
+            
+            updatePathDisplay();
+
+            // Update info panel
+            infoText.classList.add('hidden');
+            infoDetails.classList.remove('hidden');
+            infoRatio.textContent = nodeData.label;
+            infoFreq.textContent = `${frequency.toFixed(2)} Hz`;
+            infoOtonal.textContent = `${nodeData.otonalRoot.num}/${nodeData.otonalRoot.den}`;
+            infoUtonal.textContent = `${nodeData.utonalRoot.num}/${nodeData.utonalRoot.den}`;
+        }
+        
+        // --- Initialization ---
+        limitSelector.addEventListener('change', drawDiamond);
+        baseFreqInput.addEventListener('change', () => {
+             if(activeNodeEl) {
+                 const nodeData = JSON.parse(activeNodeEl.dataset.nodeData);
+                 const baseFreq = parseFloat(baseFreqInput.value);
+                 const frequency = baseFreq * (nodeData.ratio.num / nodeData.ratio.den);
+                 infoFreq.textContent = `${frequency.toFixed(2)} Hz`;
+             }
+        });
+        resetPathButton.addEventListener('click', resetPath);
+        
+        window.onload = drawDiamond;
+        window.onresize = drawDiamond;
+
+    </script>
+</body>
+</html>
