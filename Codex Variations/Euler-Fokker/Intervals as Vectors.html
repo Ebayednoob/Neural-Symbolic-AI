@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial Part 1: Intervals as Vectors</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
+        #grid-container {
+            background-image: linear-gradient(rgba(107, 114, 128, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(107, 114, 128, 0.3) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transition: background-position 0.5s linear;
+        }
+        .node {
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .node.active {
+            transform: scale(1.2);
+            z-index: 10;
+            box-shadow: 0 0 20px #f59e0b;
+        }
+        .line {
+            stroke-width: 3;
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 flex flex-col md:flex-row h-screen overflow-hidden">
+
+    <!-- Explanation Panel -->
+    <div class="w-full md:w-1/3 xl:w-1/4 h-1/2 md:h-full bg-gray-800 p-6 overflow-y-auto">
+        <h1 class="text-3xl font-bold text-white mb-4">Tutorial: Step 1</h1>
+        <h2 class="text-xl font-semibold text-amber-400 mb-4">From Ratios to Vectors</h2>
+        
+        <div class="prose prose-invert text-gray-300">
+            <p>Before we can understand quaternions, we must first see musical relationships as movements in space. This is the foundation of everything that follows.</p>
+            <p>Our musical universe is built from prime numbers. For now, we'll use the first two:</p>
+            <ul>
+                <li><strong>Prime 3:</strong> Represents a Perfect Fifth. We will map this to movement along the <strong>X-axis</strong> (horizontal).</li>
+                <li><strong>Prime 5:</strong> Represents a Major Third. This will be movement along the <strong>Y-axis</strong> (vertical).</li>
+            </ul>
+            <p>Every tone is a point on this grid, defined by its "prime factorization." The starting point, <code class="text-amber-300">1/1</code>, is at the origin (0,0), with prime factors <code class="text-amber-300">{3:0, 5:0}</code>.</p>
+            <p class="font-bold text-white mt-6">Your Goal:</p>
+            <p>Use the buttons to add intervals. Each click adds a new node and a "vector" (a line) connecting it. Watch how the ratio, prime factors, and coordinates change. Explore the grid and see the lattice structure you're building with these simple rules.</p>
+        </div>
+
+        <div class="mt-8 bg-gray-900/50 rounded-lg p-4">
+             <h3 class="font-semibold text-lg text-white mb-3">Current Node Info</h3>
+             <div id="info-panel" class="font-mono grid grid-cols-2 gap-2 text-sm">
+                <span>Ratio:</span> <strong id="info-ratio" class="text-amber-400">1/1</strong>
+                <span>Frequency:</span> <strong id="info-freq" class="text-amber-400">261.63 Hz</strong>
+                <span>Factors:</span> <strong id="info-factors" class="text-amber-400">{3:0, 5:0}</strong>
+                <span>Coords:</span> <strong id="info-coords" class="text-amber-400">(0, 0)</strong>
+             </div>
+        </div>
+         <div class="mt-4 flex flex-col gap-3">
+            <button id="start-audio" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition">Start Audio</button>
+            <input type="number" id="base-freq" value="261.63" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2" title="Base Frequency (Hz)">
+         </div>
+    </div>
+
+    <!-- Interactive Grid -->
+    <div class="flex-grow w-full md:w-2/3 xl:w-3/4 h-1/2 md:h-full relative overflow-hidden bg-gray-800/20">
+        <div id="grid-container" class="absolute top-0 left-0 w-full h-full">
+            <svg id="lines-svg" class="absolute top-0 left-0 w-full h-full" style="pointer-events: none;"></svg>
+        </div>
+        <!-- Controls appear over the grid -->
+        <div id="controls-container" class="absolute bottom-4 right-4 flex gap-4">
+             <button id="add-fifth" class="control-btn px-5 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-bold shadow-lg">Add Fifth (x3)</button>
+             <button id="add-third" class="control-btn px-5 py-3 bg-green-600 hover:bg-green-700 rounded-lg text-white font-bold shadow-lg">Add Third (x5)</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Global State & Constants ---
+        const GRID_SCALE = 50;
+        let synth, audioReady = false;
+        let nodes = new Map();
+        let currentNodeKey = "0,0";
+        let pan = { x: 0, y: 0 };
+
+        // --- DOM Elements ---
+        const gridContainer = document.getElementById('grid-container');
+        const linesSvg = document.getElementById('lines-svg');
+        const infoRatio = document.getElementById('info-ratio'), infoFreq = document.getElementById('info-freq'), infoFactors = document.getElementById('info-factors'), infoCoords = document.getElementById('info-coords');
+        const startAudioBtn = document.getElementById('start-audio');
+        const baseFreqInput = document.getElementById('base-freq');
+
+        // --- Core Logic ---
+        function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+        function reduceToOctave(num, den) {
+            let val = num / den;
+            while (val >= 2) val /= 2;
+            while (val < 1) val *= 2;
+            let multiplier = 1;
+            while (Math.abs((val * multiplier) % 1) > 1e-9) { multiplier *= 10; if (multiplier > 10000) break; }
+            let n = Math.round(val * multiplier), d = multiplier;
+            const commonDivisor = gcd(n, d);
+            return { num: n / commonDivisor, den: d / commonDivisor };
+        }
+
+        function createNode(factors) {
+            const key = `${factors[3]},${factors[5]}`;
+            if (nodes.has(key)) return nodes.get(key);
+
+            let num = Math.pow(3, factors[3]) * Math.pow(5, factors[5]);
+            const ratio = reduceToOctave(num, 1);
+            const label = `${ratio.num}/${ratio.den}`;
+            
+            const nodeEl = document.createElement('div');
+            nodeEl.className = "node absolute w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center cursor-pointer border-2 border-gray-600";
+            nodeEl.innerHTML = `<span class="font-mono font-bold text-sm">${label}</span>`;
+            
+            const nodeData = {
+                el: nodeEl,
+                key: key,
+                factors: factors,
+                ratio: ratio,
+                label: label,
+                connections: new Set()
+            };
+            
+            nodeEl.addEventListener('click', () => selectNode(key));
+            gridContainer.appendChild(nodeEl);
+            nodes.set(key, nodeData);
+            return nodeData;
+        }
+
+        function selectNode(key) {
+            if (!nodes.has(key)) return;
+            
+            // Deactivate old node
+            if (nodes.has(currentNodeKey)) {
+                nodes.get(currentNodeKey).el.classList.remove('active', 'bg-amber-500', 'border-amber-300');
+            }
+            
+            currentNodeKey = key;
+            const nodeData = nodes.get(key);
+            nodeData.el.classList.add('active', 'bg-amber-500', 'border-amber-300');
+            
+            updateInfoPanel(nodeData);
+
+            if (audioReady) {
+                const freq = parseFloat(baseFreqInput.value) * (nodeData.ratio.num / nodeData.ratio.den);
+                synth.triggerAttackRelease(freq, '0.5');
+            }
+        }
+        
+        function addInterval(prime) {
+            const currentFactors = nodes.get(currentNodeKey).factors;
+            const nextFactors = { ...currentFactors };
+            nextFactors[prime]++;
+            
+            const nextNode = createNode(nextFactors);
+            
+            // Connect nodes (prevent duplicates)
+            const connectionKey1 = `${currentNodeKey}|${nextNode.key}`;
+            const connectionKey2 = `${nextNode.key}|${currentNodeKey}`;
+            const currentNode = nodes.get(currentNodeKey);
+
+            if (!currentNode.connections.has(nextNode.key)) {
+                currentNode.connections.add(nextNode.key);
+                nextNode.connections.add(currentNode.key);
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('id', connectionKey1);
+                line.setAttribute('stroke', prime === 3 ? '#ef4444' : '#22c55e'); // red-500 or green-500
+                line.classList.add('line');
+                linesSvg.appendChild(line);
+            }
+
+            selectNode(nextNode.key);
+            draw();
+        }
+
+        function updateInfoPanel(nodeData) {
+            const baseFreq = parseFloat(baseFreqInput.value);
+            const freq = baseFreq * (nodeData.ratio.num / nodeData.ratio.den);
+            
+            infoRatio.textContent = nodeData.label;
+            infoFreq.textContent = `${freq.toFixed(2)} Hz`;
+            infoFactors.textContent = `{3:${nodeData.factors[3]}, 5:${nodeData.factors[5]}}`;
+            infoCoords.textContent = `(${nodeData.factors[3]}, ${nodeData.factors[5]})`;
+        }
+
+        function draw() {
+            const centerX = gridContainer.offsetWidth / 2;
+            const centerY = gridContainer.offsetHeight / 2;
+
+            nodes.forEach(nodeData => {
+                const x = centerX + (nodeData.factors[3] * GRID_SCALE) + pan.x;
+                const y = centerY - (nodeData.factors[5] * GRID_SCALE) + pan.y; // Y is inverted in screen coords
+                nodeData.el.style.left = `${x - 24}px`;
+                nodeData.el.style.top = `${y - 24}px`;
+                
+                // Draw its connections
+                nodeData.connections.forEach(connectedKey => {
+                    const connectionKey = `${nodeData.key}|${connectedKey}`;
+                    const line = document.getElementById(connectionKey);
+                    if(line) {
+                        const connectedNode = nodes.get(connectedKey);
+                        const x2 = centerX + (connectedNode.factors[3] * GRID_SCALE) + pan.x;
+                        const y2 = centerY - (connectedNode.factors[5] * GRID_SCALE) + pan.y;
+                        line.setAttribute('x1', x);
+                        line.setAttribute('y1', y);
+                        line.setAttribute('x2', x2);
+                        line.setAttribute('y2', y2);
+                    }
+                });
+            });
+        }
+
+        // --- Event Listeners & Init ---
+        startAudioBtn.addEventListener('click', async () => {
+            if (audioReady) return;
+            await Tone.start();
+            synth = new Tone.Synth({ oscillator: { type: 'sine' } }).toDestination();
+            audioReady = true;
+            startAudioBtn.textContent = 'Audio Ready';
+            startAudioBtn.classList.add('bg-green-600');
+        });
+
+        document.getElementById('add-fifth').addEventListener('click', () => addInterval(3));
+        document.getElementById('add-third').addEventListener('click', () => addInterval(5));
+        baseFreqInput.addEventListener('change', () => selectNode(currentNodeKey));
+        
+        // Pan functionality
+        let isPanning = false;
+        let startPan = { x: 0, y: 0 };
+        gridContainer.addEventListener('mousedown', (e) => { 
+            isPanning = true; 
+            startPan = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+            gridContainer.style.cursor = 'grabbing';
+        });
+        window.addEventListener('mouseup', () => { 
+            isPanning = false;
+            gridContainer.style.cursor = 'grab';
+        });
+        window.addEventListener('mousemove', (e) => {
+            if(isPanning) {
+                pan.x = e.clientX - startPan.x;
+                pan.y = e.clientY - startPan.y;
+                gridContainer.style.backgroundPosition = `${pan.x}px ${pan.y}px`;
+                draw();
+            }
+        });
+
+        // Initial setup
+        createNode({ 3: 0, 5: 0 });
+        selectNode("0,0");
+        draw();
+        window.onresize = draw;
+
+    </script>
+</body>
+</html>
