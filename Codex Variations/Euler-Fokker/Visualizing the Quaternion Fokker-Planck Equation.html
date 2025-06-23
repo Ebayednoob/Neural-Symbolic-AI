@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Visual Guide to the Quaternion Fokker-Planck Equation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.7;
+            color: #1a202c;
+            background-color: #f7fafc;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .step-header {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #2d3748;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .step-subheader {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .prose {
+            font-size: 1.125rem;
+            color: #4a5568;
+        }
+        .equation-box {
+            background-color: #edf2f7;
+            border-left: 4px solid #4299e1;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: monospace;
+            font-size: 1rem;
+            overflow-x: auto;
+            border-radius: 0.25rem;
+            white-space: pre-wrap;
+        }
+        .viz-container {
+            background-color: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            margin: 2rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .viz-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            width: 100%;
+        }
+        .viz-item {
+            text-align: center;
+        }
+        .viz-item svg {
+            margin: 0 auto;
+        }
+        .viz-caption {
+            font-size: 0.875rem;
+            color: #718096;
+            margin-top: 0.75rem;
+        }
+        .latex {
+            font-family: "Latin Modern Math", "Cambria Math", serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="text-center py-8">
+            <h1 class="text-4xl font-bold text-gray-800">A Visual Guide to the Quaternion Fokker-Planck Equation</h1>
+            <p class="text-xl text-gray-600 mt-2">From Drifting Clouds to Rotating Realities</p>
+        </header>
+
+        <!-- Step 1: Classical FPE -->
+        <section>
+            <h2 class="step-header">Step 1: The Classical Idea - A Cloud of Possibilities</h2>
+            <p class="prose">
+                Imagine we're tracking a particle, but we're not exactly sure where it is. Its location is described by a probability distribution—a "cloud" where denser areas mean the particle is more likely to be there. The standard Fokker-Planck equation describes how this cloud evolves over time.
+            </p>
+            <div class="equation-box">
+                <span class="latex">∂P(x,t)/∂t = -∂/∂x[A(x)P(x,t)] + ∂²/∂x²[D(x)P(x,t)]</span>
+            </div>
+
+            <div class="viz-container">
+                 <h3 class="step-subheader">Two main forces are at play:</h3>
+                 <div class="viz-grid">
+                     <div class="viz-item">
+                        <svg width="200" height="150" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                                    <stop offset="0%" style="stop-color:rgb(66, 153, 225);stop-opacity:0.7"/>
+                                    <stop offset="100%" style="stop-color:rgb(66, 153, 225);stop-opacity:0"/>
+                                </radialGradient>
+                            </defs>
+                            <ellipse cx="70" cy="75" rx="50" ry="30" fill="url(#grad1)" />
+                             <path d="M 120,75 L 170,75" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow)"/>
+                             <text x="135" y="65" font-size="12" fill="#2d3748">Drift</text>
+                            <ellipse cx="160" cy="75" rx="50" ry="30" fill="url(#grad1)" opacity="0.6" />
+                        </svg>
+                         <p class="viz-caption"><strong>Drift (A):</strong> An external force that pushes the entire cloud in a certain direction, like wind blowing smoke.</p>
+                     </div>
+                     <div class="viz-item">
+                         <svg width="200" height="150" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+                             <defs>
+                                <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2d3748" />
+                                </marker>
+                            </defs>
+                            <ellipse cx="100" cy="75" rx="40" ry="25" fill="url(#grad1)" />
+                            <ellipse cx="100" cy="75" rx="60" ry="40" fill="url(#grad1)" opacity="0.5" />
+                            <path d="M 60,75 L 40,75" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow)"/>
+                            <path d="M 140,75 L 160,75" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow)"/>
+                            <path d="M 100,50 L 100,30" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow)"/>
+                            <path d="M 100,100 L 100,120" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow)"/>
+                            <text x="80" y="20" font-size="12" fill="#2d3748">Diffusion</text>
+                         </svg>
+                         <p class="viz-caption"><strong>Diffusion (D):</strong> Random motion that causes the cloud to spread out and become less certain over time.</p>
+                     </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- Step 2: Introducing Quaternions -->
+        <section>
+            <h2 class="step-header">Step 2: Beyond Position - Adding Orientation with Quaternions</h2>
+            <p class="prose">
+                Now, what if our "particle" isn't just a point, but an object that can rotate? A simple number isn't enough. We need quaternions. A quaternion <span class="latex">q</span> is a 4-dimensional number, perfect for describing 3D orientation.
+            </p>
+            <div class="equation-box">
+                <span class="latex">q = a + b<B>i</B> + c<B>j</B> + d<B>k</B></span>
+            </div>
+            <div class="viz-container">
+                 <h3 class="step-subheader">Think of a quaternion in two ways:</h3>
+                 <div class="viz-grid">
+                     <div class="viz-item">
+                        <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <text x="100" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#2d3748">As a 4D Point</text>
+                             <!-- Scalar part -->
+                             <circle cx="100" cy="110" r="15" fill="#e53e3e" />
+                             <text x="100" y="115" text-anchor="middle" font-size="16" fill="white" font-weight="bold">a</text>
+                             <text x="100" y="150" text-anchor="middle" font-size="12" fill="#718096">Scalar Part</text>
+                             <!-- Vector part -->
+                             <path d="M 100 110 L 140 80" stroke="#4299e1" stroke-width="3" marker-end="url(#arrow_blue)"/>
+                             <defs>
+                                <marker id="arrow_blue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#4299e1" />
+                                 </marker>
+                            </defs>
+                            <text x="120" y="70" font-size="14" fill="#4299e1" font-weight="bold">(b, c, d)</text>
+                             <text x="50" y="70" text-anchor="middle" font-size="12" fill="#718096">Vector Part</text>
+                         </svg>
+                         <p class="viz-caption">It has a <strong>scalar part (a)</strong> and a <strong>3D vector part (bi + cj + dk)</strong>.</p>
+                     </div>
+                     <div class="viz-item">
+                        <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <text x="100" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#2d3748">As a Rotation</text>
+                             <!-- Before -->
+                            <path d="M 50 150 L 50 80 L 80 80 L 80 150" fill="none" stroke="#a0aec0" stroke-width="2" stroke-dasharray="4"/>
+                            <rect x="50" y="80" width="30" height="70" fill="#a0aec0" opacity="0.3"/>
+                            <text x="65" y="170" text-anchor="middle" font-size="12" fill="#718096">Before</text>
+                             <!-- Arrow -->
+                             <path d="M 95 115 C 105 105, 115 105, 125 115" fill="none" stroke="#2d3748" stroke-width="2"/>
+                             <path d="M 120 110 L 125 115 L 120 120" fill="none" stroke="#2d3748" stroke-width="2"/>
+                             <text x="110" y="95" text-anchor="middle" font-size="14" font-weight="bold">q</text>
+                             <!-- After -->
+                             <g transform="rotate(30, 145, 115)">
+                                <path d="M 130 150 L 130 80 L 160 80 L 160 150" fill="none" stroke="#4299e1" stroke-width="2"/>
+                                <rect x="130" y="80" width="30" height="70" fill="#4299e1" opacity="0.6"/>
+                            </g>
+                             <text x="145" y="170" text-anchor="middle" font-size="12" fill="#718096">After</text>
+                        </svg>
+                        <p class="viz-caption">Applying a quaternion to an object rotates it in 3D space.</p>
+                     </div>
+                 </div>
+                 <p class="prose mt-4 text-center">A key rule: Quaternion multiplication is <strong>non-commutative</strong> (<span class="latex">q₁ × q₂ ≠ q₂ × q₁</span>). The order of rotations matters!</p>
+            </div>
+        </section>
+
+        <!-- Step 3: Quaternion FPE -->
+        <section>
+            <h2 class="step-header">Step 3: The Quaternion FPE - Drifting and Diffusing Orientations</h2>
+            <p class="prose">
+                Now we combine these ideas. We have a probability distribution <span class="latex">P(q, t)</span> over quaternions. This isn't just a cloud of positions; it's a cloud of <strong>orientations</strong>. Each point in our space has a likelihood AND a rotational property. The Quaternion Fokker-Planck Equation (QFPE) describes how this orientation-cloud evolves.
+            </p>
+            <div class="equation-box">
+                <span class="latex">∂P(q,t)/∂t = -∇<SUB>q</SUB> ⋅ [ A⃗(q) ∘ P(q,t) ] + D∇<SUB>q</SUB>² P(q,t)</span>
+            </div>
+
+             <div class="viz-container">
+                 <h3 class="step-subheader">Visualizing the New Terms</h3>
+                 <div class="viz-grid">
+                     <div class="viz-item">
+                        <svg width="200" height="150" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+                            <text x="100" y="20" text-anchor="middle" font-weight="bold" fill="#2d3748">P(q, t)</text>
+                            <text x="100" y="35" text-anchor="middle" font-size="12" fill="#718096">Oriented Probability</text>
+                            <!-- Cloud -->
+                            <path d="M50,100 Q80,60 100,80 T150,100 Q120,130 100,110 T50,100" fill="#4299e1" fill-opacity="0.3"/>
+                            <!-- Arrows -->
+                            <g transform="rotate(10, 70, 90)"><path d="M65,90 L75,90" stroke="#c53030" stroke-width="2" marker-end="url(#arrow_red)"/><defs><marker id="arrow_red" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#c53030"/></marker></defs></g>
+                             <g transform="rotate(-20, 100, 85)"><path d="M95,85 L105,85" stroke="#c53030" stroke-width="2" marker-end="url(#arrow_red)"/></g>
+                             <g transform="rotate(45, 130, 100)"><path d="M125,100 L135,100" stroke="#c53030" stroke-width="2" marker-end="url(#arrow_red)"/></g>
+                             <g transform="rotate(-10, 100, 110)"><path d="M95,110 L105,110" stroke="#c53030" stroke-width="2" marker-end="url(#arrow_red)"/></g>
+                        </svg>
+                         <p class="viz-caption">Our "cloud" now has an internal orientation at every point, represented by the red arrows.</p>
+                     </div>
+                     <div class="viz-item">
+                         <svg width="200" height="150" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+                            <text x="100" y="20" text-anchor="middle" font-weight="bold" fill="#2d3748">A⃗(q) ∘ P(q,t)</text>
+                            <text x="100" y="35" text-anchor="middle" font-size="12" fill="#718096">Orientational Drift</text>
+                             <!-- Drift Field Arrow -->
+                             <path d="M50,90 C 80 70, 120 130, 150 90" stroke="#2a69ac" stroke-width="2.5" fill="none" stroke-dasharray="4"/>
+                             <text x="30" y="90" fill="#2a69ac" font-weight="bold">A⃗</text>
+                            <!-- Cloud -->
+                            <path d="M100,90 Q130,50 150,70 T200,90 Q170,120 150,100 T100,90" fill="#4299e1" fill-opacity="0.3" transform="translate(-40,0)"/>
+                            <!-- Arrows -->
+                            <g transform="translate(-40,0)">
+                               <g transform="rotate(10, 120, 80)"><path d="M115,80 L125,80" stroke="#c53030" stroke-width="2" marker-end="url(#arrow_red)"/></g>
+                               <g transform="rotate(45, 150, 90)"><path d="M145,90 L155,90" stroke="#c53030" stroke-width="2" marker-end="url(#arrow_red)"/></g>
+                               <g transform="rotate(20, 130, 105)"><path d="M125,105 L135,105" stroke="#c53030" stroke-width="2" marker-end="url(#arrow_red)"/></g>
+                            </g>
+                         </svg>
+                         <p class="viz-caption">The drift <span class="latex">A⃗</span> is now a quaternion field. It doesn't just push the cloud; it <strong>twists and turns</strong> its internal orientations.</p>
+                     </div>
+                 </div>
+                 <div class="prose mt-6 text-center">
+                     <p>The diffusion term <span class="latex">D∇<SUB>q</SUB>² P(q,t)</span> now acts to randomize not just position, but also orientation. Imagine the little red arrows blurring out, pointing in more random directions over time.</p>
+                 </div>
+            </div>
+        </section>
+
+        <!-- Step 4: The Big Picture -->
+        <section>
+            <h2 class="step-header">Step 4: The Grand Analogy - A Nebula of Concepts</h2>
+            <p class="prose">
+                Think of the QFPE as describing a "nebula of concepts" or symbolic beliefs. The nebula's position represents a core idea, while its orientation represents the idea's context, spin, or relationship to other ideas.
+            </p>
+            <div class="viz-container">
+                <svg width="600" height="300" viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="600" height="300" fill="#1a202c" rx="8"/>
+                    <text x="300" y="30" text-anchor="middle" fill="white" font-size="18">Evolution of a Symbolic State</text>
+                    
+                    <!-- Time 1 -->
+                    <g id="state1">
+                        <ellipse cx="100" cy="150" rx="60" ry="30" fill="url(#nebula_grad_1)"/>
+                        <defs>
+                             <radialGradient id="nebula_grad_1">
+                                <stop offset="0%" stop-color="#f56565" />
+                                <stop offset="100%" stop-color="#c53030" stop-opacity="0.2"/>
+                            </radialGradient>
+                        </defs>
+                        <g transform="rotate(-15, 100, 150)"><path d="M70,150 L130,150" stroke="white" stroke-width="2" marker-end="url(#arrow_white)"/></g>
+                        <defs>
+                             <marker id="arrow_white" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="white"/></marker>
+                        </defs>
+                        <text x="100" y="220" text-anchor="middle" fill="white">Time t</text>
+                    </g>
+
+                    <!-- Arrow -->
+                    <path d="M 200 150 C 250 120, 350 180, 400 150" fill="none" stroke="#4a5568" stroke-width="2" stroke-dasharray="5"/>
+                    <text x="300" y="140" fill="#a0aec0">Drift & Diffusion</text>
+
+                    <!-- Time 2 -->
+                    <g id="state2">
+                        <ellipse cx="450" cy="150" rx="70" ry="40" fill="url(#nebula_grad_2)"/>
+                         <defs>
+                             <radialGradient id="nebula_grad_2">
+                                <stop offset="0%" stop-color="#48bb78" />
+                                <stop offset="100%" stop-color="#2f855a" stop-opacity="0.2"/>
+                            </radialGradient>
+                        </defs>
+                        <g transform="rotate(30, 450, 150)"><path d="M410,150 L490,150" stroke="white" stroke-width="2" marker-end="url(#arrow_white)"/></g>
+                        <text x="450" y="220" text-anchor="middle" fill="white">Time t+1</text>
+                    </g>
+                </svg>
+                <div class="viz-caption text-gray-400 mt-4">
+                    The initial state (red) is pushed by drift and spread by diffusion. It arrives at a new state (green) that is in a different position, is more spread out (diffused), and has a new orientation (rotated).
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 5: Applications -->
+        <section>
+            <h2 class="step-header">Step 5: Why Bother? Real-World Applications</h2>
+            <p class="prose">This isn't just abstract math. This framework has powerful potential for modeling complex systems where orientation is key.</p>
+            <div class="viz-container">
+                 <div class="viz-grid">
+                     <div class="viz-item">
+                        <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20,80 Q50,20 80,80 Z" fill="none" stroke="#4a5568" stroke-width="3"/>
+                            <circle cx="50" cy="50" r="10" fill="#4299e1"/>
+                             <g transform="rotate(45, 50, 50)">
+                                <path d="M50,30 L50,70 M30,50 L70,50" stroke="#4299e1" stroke-width="2"/>
+                            </g>
+                        </svg>
+                         <h4 class="font-bold mt-2">3D Pose Filtering</h4>
+                         <p class="viz-caption">Estimating the true orientation of a drone or satellite from noisy sensor data. The QFPE can "filter" the noise to find the most probable orientation.</p>
+                     </div>
+                     <div class="viz-item">
+                        <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M25,20 a25,25 0 0,1 50,0 h-15 a10,10 0 0,0 -20,0 z" fill="#4a5568"/>
+                            <rect x="25" y="45" width="50" height="35" rx="5" fill="#a0aec0"/>
+                             <circle cx="38" cy="63" r="4" fill="#f56565"/>
+                            <circle cx="62" cy="63" r="4" fill="#48bb78"/>
+                             <g transform="rotate(15, 50, 45)"><path d="M45,45 L55,45" stroke="#c53030" stroke-width="2" marker-end="url(#arrow_red)"/></g>
+                         </svg>
+                         <h4 class="font-bold mt-2">Symbolic AI Agents</h4>
+                         <p class="viz-caption">Modeling an AI's belief state. A belief isn't just "true/false"; it has context and relationships. The QFPE can model how beliefs evolve and "rotate" as new information arrives.</p>
+                     </div>
+                     <div class="viz-item">
+                        <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                           <path d="M20,50 C40,20 60,20 80,50 C60,80 40,80 20,50 Z" fill="#4299e1" opacity="0.2"/>
+                           <path d="M30,50 C45,30 55,30 70,50 C55,70 45,70 30,50 Z" fill="#4299e1" opacity="0.4"/>
+                           <path d="M40,50 C47.5,40 52.5,40 60,50 C52.5,60 47.5,60 40,50 Z" fill="#4299e1" opacity="0.6"/>
+                           <path d="M45,50 L55,50" stroke="#c53030" stroke-width="2" marker-end="url(#arrow_red)"/>
+                        </svg>
+                         <h4 class="font-bold mt-2">Field-Based Cognition</h4>
+                         <p class="viz-caption">Simulating how concepts in the brain might be represented as fields. An idea can be "pulled" towards another (drift) and change its meaning/context (rotation).</p>
+                     </div>
+                 </div>
+            </div>
+        </section>
+
+    </div>
+
+</body>
+</html>
