@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial Part 2: From 2D to 3D Lattice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
+        #renderer-container { cursor: grab; }
+        #renderer-container:active { cursor: grabbing; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 flex flex-col md:flex-row h-screen overflow-hidden">
+
+    <!-- Explanation Panel -->
+    <div class="w-full md:w-1/3 xl:w-1/4 h-2/5 md:h-full bg-gray-800 p-6 overflow-y-auto">
+        <h1 class="text-3xl font-bold text-white mb-4">Tutorial: Step 2</h1>
+        <h2 class="text-xl font-semibold text-amber-400 mb-4">Adding a Third Dimension</h2>
+        
+        <div class="prose prose-invert text-gray-300">
+            <p>Now we expand our thinking. We introduce a third prime, creating a true 3D space. Each prime now maps to a unique axis:</p>
+            <ul>
+                <li><strong>Prime 3 (Fifth):</strong> X-axis (Red)</li>
+                <li><strong>Prime 5 (Third):</strong> Y-axis (Green)</li>
+                <li><strong>Prime 7 (Seventh):</strong> Z-axis (Blue)</li>
+            </ul>
+            <p>You can now build a 3D lattice of tones. Use your mouse to rotate (left-click), pan (right-click), and zoom (scroll wheel) to explore the structure.</p>
+            
+            <h3 class="font-semibold text-white mt-6">The Concept of a Path</h3>
+            <p>As you add intervals, you are no longer just plotting points; you are creating a <strong class="text-amber-400">path</strong> through the lattice. The "Current Path" panel logs this sequence.</p>
+            <p>Think of each step not as moving *to* a tone, but as applying a <strong class="text-white">transformation</strong> from your current position. Adding a fifth is applying a "move along X" transformation. This is the core idea we will build on to create quaternions.</p>
+             <p class="font-bold text-white mt-6">Your Goal:</p>
+             <p>Build a small 3D structure. Try making a path like `Fifth -> Third -> Seventh`. See how you traverse the 3D space and how the coordinates and prime factors accumulate.</p>
+        </div>
+        
+        <div id="controls-container" class="mt-6 flex flex-col gap-3">
+             <button id="start-audio" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition">Start Audio</button>
+             <button id="reset-path" class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold transition">Reset Path & View</button>
+        </div>
+    </div>
+
+    <!-- 3D Interactive View -->
+    <div class="flex-grow w-full md:w-2/3 xl:w-3/4 h-3/5 md:h-full relative">
+        <div id="renderer-container" class="absolute top-0 left-0 w-full h-full"></div>
+        <!-- Info panels appear over the 3D view -->
+        <div class="absolute top-4 left-4 bg-gray-900/70 p-3 rounded-lg backdrop-blur-sm">
+             <h3 class="font-semibold text-lg text-white mb-2">Current Node</h3>
+             <div id="info-panel" class="font-mono grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                <span>Ratio:</span> <strong id="info-ratio" class="text-amber-400">1/1</strong>
+                <span>Factors:</span> <strong id="info-factors" class="text-amber-400">{3:0,5:0,7:0}</strong>
+                <span>Coords:</span> <strong id="info-coords" class="text-amber-400">(0,0,0)</strong>
+             </div>
+        </div>
+         <div class="absolute bottom-4 right-4 bg-gray-900/70 p-3 rounded-lg backdrop-blur-sm">
+             <h3 class="font-semibold text-lg text-white mb-2">Current Path</h3>
+             <div id="path-log" class="flex flex-wrap gap-2 items-center text-xs">
+                <p id="path-text" class="text-gray-400 text-sm">Path starts at 1/1...</p>
+             </div>
+        </div>
+        <div class="absolute bottom-4 left-4 flex gap-4">
+             <button id="add-fifth" class="control-btn px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-bold shadow-lg">Add Fifth (x3)</button>
+             <button id="add-third" class="control-btn px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white font-bold shadow-lg">Add Third (x5)</button>
+             <button id="add-seventh" class="control-btn px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold shadow-lg">Add Seventh (x7)</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Global State & Constants ---
+        const SCALE_FACTOR = 1.5;
+        let scene, camera, renderer, controls, synth, audioReady = false;
+        let nodes = new Map();
+        let path = [];
+        let nodeObjects = new Map(); // Maps key to THREE.Object3D
+        let pathLineObjects = [];
+        const baseFreq = 261.63;
+
+        // --- DOM Elements ---
+        const rendererContainer = document.getElementById('renderer-container');
+        const infoRatio = document.getElementById('info-ratio'), infoFactors = document.getElementById('info-factors'), infoCoords = document.getElementById('info-coords');
+        const pathLog = document.getElementById('path-log'), pathText = document.getElementById('path-text');
+
+        // --- Core Logic ---
+        function init() {
+            // Scene Setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1f2937); // gray-800
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, rendererContainer.clientWidth / rendererContainer.clientHeight, 0.1, 1000);
+            camera.position.set(2, 2, 3);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(rendererContainer.clientWidth, rendererContainer.clientHeight);
+            rendererContainer.appendChild(renderer.domElement);
+            
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            // Lighting & Axes
+            scene.add(new THREE.AmbientLight(0xcccccc, 0.8));
+            const light = new THREE.DirectionalLight(0xffffff, 0.6);
+            light.position.set(3, 4, 5);
+            scene.add(light);
+            scene.add(new THREE.AxesHelper(10));
+
+            // Raycaster for clicking
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            rendererContainer.addEventListener('click', (event) => {
+                const rect = rendererContainer.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects([...nodeObjects.values()]);
+                if (intersects.length > 0) {
+                    selectNode(intersects[0].object.userData.key, false);
+                }
+            });
+
+            // Initial scene build
+            resetPath();
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+        function reduceToOctave(num) {
+            let den = 1;
+            while (num / den >= 2) num /= 2;
+            return { num, den };
+        }
+
+        function createNode(factors) {
+            const key = `${factors[3]},${factors[5]},${factors[7]}`;
+            if (nodes.has(key)) return nodes.get(key);
+
+            const num = Math.pow(3, factors[3]) * Math.pow(5, factors[5]) * Math.pow(7, factors[7]);
+            const ratio = reduceToOctave(num);
+            
+            const nodeData = {
+                key: key,
+                factors: factors,
+                ratio: ratio,
+                label: `${ratio.num}/${ratio.den}`,
+                position: new THREE.Vector3(factors[3] * SCALE_FACTOR, factors[5] * SCALE_FACTOR, factors[7] * SCALE_FACTOR)
+            };
+            nodes.set(key, nodeData);
+
+            // Create 3D object
+            const geo = new THREE.SphereGeometry(0.15, 32, 16);
+            const mat = new THREE.MeshPhongMaterial({ color: 0x6b7280 }); // gray-500
+            const sphere = new THREE.Mesh(geo, mat);
+            sphere.position.copy(nodeData.position);
+            sphere.userData = nodeData; // Link data back to object
+            scene.add(sphere);
+            nodeObjects.set(key, sphere);
+            
+            return nodeData;
+        }
+
+        function selectNode(key, isNewStep) {
+            if (!nodes.has(key)) return;
+            const nodeData = nodes.get(key);
+            
+            if (isNewStep) {
+                // Draw line from previous node in path to this one
+                if (path.length > 0) {
+                    const prevNode = path[path.length - 1];
+                    const lineGeo = new THREE.BufferGeometry().setFromPoints([prevNode.position, nodeData.position]);
+                    const lineMat = new THREE.LineBasicMaterial({ color: 0xf59e0b, linewidth: 2 });
+                    const line = new THREE.Line(lineGeo, lineMat);
+                    scene.add(line);
+                    pathLineObjects.push(line);
+                }
+                path.push(nodeData);
+            }
+            
+            // Update UI
+            updateInfoPanel(nodeData);
+            updatePathLog();
+            highlightPath();
+
+            // Play sound
+            if (audioReady) {
+                const freq = baseFreq * (nodeData.ratio.num / nodeData.ratio.den);
+                synth.triggerAttackRelease(freq, '0.5');
+            }
+        }
+        
+        function addInterval(prime) {
+            if (path.length === 0) return;
+            const lastNode = path[path.length - 1];
+            const nextFactors = { ...lastNode.factors };
+            nextFactors[prime]++;
+            
+            const nextNode = createNode(nextFactors);
+            selectNode(nextNode.key, true);
+        }
+
+        function updateInfoPanel(nodeData) {
+            infoRatio.textContent = nodeData.label;
+            infoFactors.textContent = `{3:${nodeData.factors[3]},5:${nodeData.factors[5]},7:${nodeData.factors[7]}}`;
+            infoCoords.textContent = `(${nodeData.factors[3]},${nodeData.factors[5]},${nodeData.factors[7]})`;
+        }
+
+        function updatePathLog() {
+            pathLog.innerHTML = '';
+            pathText.style.display = 'none';
+            path.forEach((node, index) => {
+                const item = document.createElement('span');
+                item.className = 'bg-gray-700 text-amber-400 font-mono rounded px-2 py-1';
+                item.textContent = node.label;
+                pathLog.appendChild(item);
+                if (index < path.length - 1) {
+                    const arrow = document.createElement('span');
+                    arrow.className = 'text-gray-500 mx-1';
+                    arrow.textContent = '→';
+                    pathLog.appendChild(arrow);
+                }
+            });
+        }
+
+        function highlightPath() {
+            nodeObjects.forEach((sphere, key) => {
+                const isInPath = path.some(p => p.key === key);
+                const isLast = path.length > 0 && path[path.length - 1].key === key;
+                if (isLast) {
+                    sphere.material.color.set(0xf59e0b); // amber-500
+                    sphere.scale.set(1.5, 1.5, 1.5);
+                } else if (isInPath) {
+                    sphere.material.color.set(0xca8a04); // yellow-600
+                    sphere.scale.set(1.2, 1.2, 1.2);
+                } else {
+                    sphere.material.color.set(0x6b7280); // gray-500
+                    sphere.scale.set(1, 1, 1);
+                }
+            });
+        }
+
+        function resetPath() {
+            pathLineObjects.forEach(line => scene.remove(line));
+            pathLineObjects = [];
+            nodeObjects.forEach(obj => scene.remove(obj));
+            nodeObjects.clear();
+            nodes.clear();
+            path = [];
+            pathText.style.display = 'block';
+            pathLog.innerHTML = '';
+            
+            const origin = createNode({ 3: 0, 5: 0, 7: 0 });
+            selectNode(origin.key, true);
+        }
+
+        // --- Event Listeners & Init ---
+        document.getElementById('start-audio').addEventListener('click', async () => {
+            if (audioReady) return;
+            await Tone.start();
+            synth = new Tone.Synth({ oscillator: { type: 'sine' } }).toDestination();
+            audioReady = true;
+            document.getElementById('start-audio').textContent = 'Audio Ready';
+            document.getElementById('start-audio').classList.add('bg-green-600');
+        });
+        
+        document.getElementById('reset-path').addEventListener('click', resetPath);
+        document.getElementById('add-fifth').addEventListener('click', () => addInterval(3));
+        document.getElementById('add-third').addEventListener('click', () => addInterval(5));
+        document.getElementById('add-seventh').addEventListener('click', () => addInterval(7));
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = rendererContainer.clientWidth / rendererContainer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(rendererContainer.clientWidth, rendererContainer.clientHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>
