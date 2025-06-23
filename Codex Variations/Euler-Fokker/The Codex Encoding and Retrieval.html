@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial Part 4: The Codex - Encoding & Retrieval</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
+        #renderer-container { cursor: grab; }
+        #renderer-container:active { cursor: grabbing; }
+        .info-value { color: #f59e0b; } /* amber-500 */
+        .info-label { color: #9ca3af; } /* gray-400 */
+        .codex-entry {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .codex-entry:hover {
+            background-color: #f59e0b; /* amber-500 */
+            color: #1f2937; /* gray-800 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 flex flex-col md:flex-row h-screen overflow-hidden">
+
+    <!-- Explanation Panel -->
+    <div class="w-full md:w-1/3 xl:w-1/4 h-2/5 md:h-full bg-gray-800 p-6 overflow-y-auto">
+        <h1 class="text-3xl font-bold text-white mb-4">Tutorial: Step 4</h1>
+        <h2 class="text-xl font-semibold text-amber-400 mb-4">The Codex: Storing & Retrieving Paths</h2>
+        
+        <div class="prose prose-invert text-gray-300">
+            <p>We now arrive at the final application: creating a memory system, or <strong class="text-white">Codex</strong>.</p>
+            
+            <h3 class="font-semibold text-white mt-6">Encoding Path Data</h3>
+            <p>How do we "store" a path? We don't just save the final quaternion. We save the <strong class="text-white">sequence of transformations</strong> that created it. </p>
+            <p>When you click "Save Path", we analyze your path and store the sequence of prime intervals you used, for example: <code class="text-amber-300">[3, 5, 7]</code>. This sequence is the true, "encoded" representation of the path data.</p>
+            
+            <h3 class="font-semibold text-white mt-6">Retrieval and Playback</h3>
+            <p>The Codex displays your saved paths. Clicking on an entry in the codex initiates a retrieval process.</p>
+            <p>The system will automatically "play back" the stored sequence of intervals, rebuilding the path step-by-step, both visually and audibly. This demonstrates how an AI could recall a stored piece of information (a path) and re-experience or reuse it.</p>
+            
+            <p class="font-bold text-white mt-6">Your Goal:</p>
+            <p>Create a few different paths and save them to the Codex. Notice how each entry represents a unique sequence. Then, click your saved entries to see them retrieved and played back on the lattice. You have now built a complete system for encoding, storing, and retrieving complex relational data.</p>
+        </div>
+        
+        <div id="controls-container" class="mt-6 flex flex-col gap-3">
+             <button id="start-audio" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition">Start Audio</button>
+             <button id="save-path" class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition">Save Path to Codex</button>
+             <button id="reset-path" class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold transition">Reset Current Path</button>
+        </div>
+    </div>
+
+    <!-- 3D Interactive View -->
+    <div class="flex-grow w-full md:w-2/3 xl:w-3/4 h-3/5 md:h-full relative">
+        <div id="renderer-container" class="absolute top-0 left-0 w-full h-full"></div>
+        <!-- Info panels appear over the 3D view -->
+        <div class="absolute top-4 left-4 grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <div class="bg-gray-900/70 p-3 rounded-lg backdrop-blur-sm">
+                 <h3 class="font-semibold text-lg text-white mb-2">Current Node</h3>
+                 <div class="font-mono text-sm"><span>Ratio:</span> <strong id="info-ratio" class="info-value">1/1</strong></div>
+            </div>
+             <div class="bg-gray-900/70 p-3 rounded-lg backdrop-blur-sm">
+                 <h3 class="font-semibold text-lg text-white mb-2">Path Quaternion</h3>
+                 <div class="font-mono text-xs">w:<strong id="q-w" class="info-value ml-1">1.0</strong> x:<strong id="q-x" class="info-value ml-1">0.0</strong> y:<strong id="q-y" class="info-value ml-1">0.0</strong> z:<strong id="q-z" class="info-value ml-1">0.0</strong></div>
+            </div>
+            <div class="bg-gray-900/70 p-3 rounded-lg backdrop-blur-sm">
+                 <h3 class="font-semibold text-lg text-white mb-2">Codex</h3>
+                 <div id="codex-log" class="flex flex-wrap gap-2 items-center text-xs">
+                    <p id="codex-text" class="text-gray-400 text-sm">Your saved paths appear here...</p>
+                 </div>
+            </div>
+        </div>
+        <div class="absolute bottom-4 right-4 bg-gray-900/70 p-3 rounded-lg backdrop-blur-sm max-w-sm">
+             <h3 class="font-semibold text-lg text-white mb-2">Current Path</h3>
+             <div id="path-log" class="flex flex-wrap gap-2 items-center text-xs"></div>
+        </div>
+        <div class="absolute bottom-4 left-4 flex gap-4">
+             <button id="add-fifth" class="control-btn px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-bold shadow-lg">Add Fifth (x3)</button>
+             <button id="add-third" class="control-btn px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white font-bold shadow-lg">Add Third (x5)</button>
+             <button id="add-seventh" class="control-btn px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold shadow-lg">Add Seventh (x7)</button>
+        </div>
+    </div>
+
+    <script>
+        class MusicalQuaternion{constructor(w=1,x=0,y=0,z=0){this.w=w;this.x=x;this.y=y;this.z=z}multiply(q){const t=this,e=q;return new MusicalQuaternion(t.w*e.w-t.x*e.x-t.y*e.y-t.z*e.z,t.w*e.x+t.x*e.w+t.y*e.z-t.z*e.y,t.w*e.y-t.x*e.z+t.y*e.w+t.z*e.x,t.w*e.z+t.x*e.y-t.y*e.x+t.z*e.w)}normalize(){const t=Math.sqrt(this.w**2+this.x**2+this.y**2+this.z**2);return t>0&&(this.w/=t,this.x/=t,this.y/=t,this.z/=t),this}}
+        
+        const SCALE_FACTOR=1.5,baseFreq=261.63;
+        let scene,camera,renderer,controls,synth,audioReady=!1,nodes=new Map,nodeObjects=new Map,path=[],pathLineObjects=[],pathQuaternion=new MusicalQuaternion,codex=[],isPlaying=!1;
+        const INTERVAL_QUATERNIONS={3:(new MusicalQuaternion(Math.cos(Math.PI/8),Math.sin(Math.PI/8),0,0)).normalize(),5:(new MusicalQuaternion(Math.cos(Math.PI/8),0,Math.sin(Math.PI/8),0)).normalize(),7:(new MusicalQuaternion(Math.cos(Math.PI/8),0,0,Math.sin(Math.PI/8))).normalize()};
+        const rendererContainer=document.getElementById("renderer-container"),infoRatio=document.getElementById("info-ratio"),q_w=document.getElementById("q-w"),q_x=document.getElementById("q-x"),q_y=document.getElementById("q-y"),q_z=document.getElementById("q-z"),pathLog=document.getElementById("path-log"),codexLog=document.getElementById("codex-log"),codexText=document.getElementById("codex-text");
+        
+        function init(){scene=new THREE.Scene,scene.background=new THREE.Color(3100471),camera=new THREE.PerspectiveCamera(75,rendererContainer.clientWidth/rendererContainer.clientHeight,.1,1e3),camera.position.set(2,2,3),renderer=new THREE.WebGLRenderer({antialias:!0}),renderer.setSize(rendererContainer.clientWidth,rendererContainer.clientHeight),rendererContainer.appendChild(renderer.domElement),controls=new THREE.OrbitControls(camera,renderer.domElement),controls.enableDamping=!0,scene.add(new THREE.AmbientLight(13421772,.8)),scene.add(new THREE.DirectionalLight(16777215,.6)),scene.add(new THREE.AxesHelper(10)),resetPath(),animate()}
+        function animate(){requestAnimationFrame(animate),controls.update(),renderer.render(scene,camera)}
+        function reduceToOctave(e){let t=1;for(;e/t>=2;)e/=2;return{num:e,den:t}}
+        function createNode(e){const t=`${e[3]},${e[5]},${e[7]}`;if(nodes.has(t))return nodes.get(t);const o=Math.pow(3,e[3])*Math.pow(5,e[5])*Math.pow(7,e[7]),n=reduceToOctave(o),a={key:t,factors:e,ratio:n,label:`${n.num}/${n.den}`,position:new THREE.Vector3(e[3]*SCALE_FACTOR,e[5]*SCALE_FACTOR,e[7]*SCALE_FACTOR)};nodes.set(t,a);const s=new THREE.SphereGeometry(.15,32,16),r=new THREE.MeshPhongMaterial({color:7045232}),i=new THREE.Mesh(s,r);return i.position.copy(a.position),i.userData=a,scene.add(i),nodeObjects.set(t,i),a}
+        function addInterval(e){if(isPlaying)return;if(0===path.length)return;const t=path[path.length-1],o={...t.factors};o[e]++;const n=createNode(o),a=INTERVAL_QUATERNIONS[e];pathQuaternion=a.multiply(pathQuaternion);const s=new THREE.BufferGeometry().setFromPoints([t.position,n.position]),r=new THREE.LineBasicMaterial({color:16091157,linewidth:2}),i=new THREE.Line(s,r);scene.add(i),pathLineObjects.push(i),path.push(n),updateUI(),audioReady&&synth.triggerAttackRelease(baseFreq*(n.ratio.num/n.ratio.den),.5)}
+        function updateUI(){if(0===path.length)return;const e=path[path.length-1];infoRatio.textContent=e.label,q_w.textContent=pathQuaternion.w.toFixed(4),q_x.textContent=pathQuaternion.x.toFixed(4),q_y.textContent=pathQuaternion.y.toFixed(4),q_z.textContent=pathQuaternion.z.toFixed(4),pathLog.innerHTML="",path.forEach((e,t)=>{const o=document.createElement("span");o.className="bg-gray-700 text-amber-400 font-mono rounded px-2 py-1",o.textContent=e.label,pathLog.appendChild(o),t<path.length-1&&pathLog.appendChild(document.createTextNode(" \u2192 "))}),nodeObjects.forEach(t=>{const o=e.key===t.userData.key;t.material.color.set(o?16091157:7045232),t.scale.set(o?1.5:1,o?1.5:1,o?1.5:1)})}
+        function resetPath(){isPlaying=!1,pathLineObjects.forEach(e=>scene.remove(e)),pathLineObjects=[],nodeObjects.forEach(e=>scene.remove(e)),nodeObjects.clear(),nodes.clear(),path=[],pathQuaternion=new MusicalQuaternion;const e=createNode({3:0,5:0,7:0});path.push(e),pathLog.innerHTML="",updateUI()}
+        function savePathToCodex(){if(path.length<2)return;const e=[];for(let t=1;t<path.length;t++){const o=path[t].factors,n=path[t-1].factors;for(const a in o)if(o[a]>n[a]){e.push(parseInt(a));break}}codex.push(e),updateCodexUI()}
+        function updateCodexUI(){codexLog.innerHTML="",codex.length>0?codexText.style.display="none":codexText.style.display="block",codex.forEach((e,t)=>{const o=document.createElement("div");o.className="codex-entry bg-gray-700 rounded p-1 font-mono",o.textContent=`Path ${t+1}: [${e.join(",")}]`,o.onclick=()=>playPathFromCodex(e),codexLog.appendChild(o)})}
+        function playPathFromCodex(e){if(isPlaying)return;isPlaying=!0,resetPath();let t=0;const o=setInterval(()=>{t>=e.length?(clearInterval(o),isPlaying=!1):addInterval(e[t]),t++},600)}
+        document.getElementById("start-audio").addEventListener("click",async()=>{audioReady||(await Tone.start,synth=(new Tone.Synth({oscillator:{type:"sine"}})).toDestination(),audioReady=!0,document.getElementById("start-audio").textContent="Audio Ready",document.getElementById("start-audio").classList.add("bg-green-600"))}),document.getElementById("reset-path").addEventListener("click",resetPath),document.getElementById("save-path").addEventListener("click",savePathToCodex),document.getElementById("add-fifth").addEventListener("click",()=>addInterval(3)),document.getElementById("add-third").addEventListener("click",()=>addInterval(5)),document.getElementById("add-seventh").addEventListener("click",()=>addInterval(7)),window.addEventListener("resize",()=>{camera.aspect=rendererContainer.clientWidth/rendererContainer.clientHeight,camera.updateProjectionMatrix(),renderer.setSize(rendererContainer.clientWidth,rendererContainer.clientHeight)}),init();
+    </script>
+</body>
+</html>
