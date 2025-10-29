@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Cycle Lattice Simulation</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: #111827; /* bg-gray-900 */
+            color: #f3f4f6; /* text-gray-100 */
+        }
+        .panel {
+            position: absolute;
+            padding: 1rem;
+            background-color: rgba(17, 24, 39, 0.8); /* bg-gray-900/80 */
+            border: 1px solid #374151; /* border-gray-700 */
+            border-radius: 0.5rem; /* rounded-lg */
+            font-size: 0.875rem; /* text-sm */
+            cursor: move; /* Add move cursor */
+            user-select: none; /* Prevent text selection while dragging */
+            z-index: 10; /* Ensure panels are on top */
+        }
+        #info {
+            top: 10px;
+            left: 10px;
+            max-width: 300px;
+        }
+        #info h1 {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            margin-bottom: 0.5rem;
+        }
+        #info p {
+            margin-bottom: 0.5rem;
+        }
+        #info .quote {
+            font-size: 0.75rem; /* text-xs */
+            font-style: italic;
+            border-left: 2px solid #374151; /* border-gray-700 */
+            padding-left: 0.75rem; /* pl-3 */
+            margin-top: 0.75rem; /* mt-3 */
+            color: #d1d5db; /* text-gray-300 */
+        }
+        #info code {
+            background-color: #374151; /* bg-gray-700 */
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem; /* rounded-md */
+        }
+        #info .toggle-container {
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        #info .toggle-container label {
+            margin-left: 0.5rem; /* ml-2 */
+            font-weight: 500; /* font-medium */
+            color: #d1d5db; /* text-gray-300 */
+        }
+        #info .toggle-container input {
+            height: 1rem; /* h-4 */
+            width: 1rem; /* w-4 */
+            accent-color: #22d3ee; /* cyan-400 */
+        }
+        #graph-container {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: 300px; /* Match the info box */
+            height: 120px; /* Increased height for title */
+        }
+        #graph-container h2 {
+            color: #9ca3af; /* text-gray-400 */
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 0.25rem; /* mb-1 */
+            pointer-events: none; /* Don't intercept drag */
+        }
+        #graph-canvas {
+            width: 300px;
+            height: 100px;
+            background-color: transparent; /* Handled by container */
+            border: none;
+            border-radius: 0;
+            pointer-events: none; /* Don't intercept drag */
+        }
+        /* Style for the new Poincaré Map */
+        #poincare-container {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 220px; /* Slightly larger to include padding */
+            height: 240px; 
+        }
+        #poincare-container h2 {
+            color: #9ca3af; /* text-gray-400 */
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 0.25rem; /* mb-1 */
+            pointer-events: none;
+        }
+        #poincare-canvas {
+            width: 200px;
+            height: 200px;
+            background-color: transparent;
+            border: none;
+            border-radius: 0;
+            pointer-events: none;
+        }
+        #controls {
+            top: 10px;
+            right: 10px;
+            width: 200px;
+            cursor: move;
+        }
+        #controls h2 {
+            color: #9ca3af; /* text-gray-400 */
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 0.5rem; /* mb-2 */
+            pointer-events: none;
+        }
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .control-row button {
+            background-color: #374151; /* bg-gray-700 */
+            color: #f3f4f6; /* text-gray-100 */
+            border: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem; /* rounded-md */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500;
+            cursor: pointer;
+            width: 48%; /* Slightly less than 50% for gap */
+            transition: background-color 0.15s ease;
+        }
+        .control-row button:hover {
+            background-color: #4b5563; /* bg-gray-600 */
+        }
+        .control-row button:disabled {
+            background-color: #1f2937; /* bg-gray-800 */
+            color: #4b5563; /* text-gray-600 */
+            cursor: not-allowed;
+        }
+        /* New slider styles */
+        .slider-container {
+            margin-top: 0.75rem; /* mt-3 */
+            pointer-events: none; /* Let parent handle drag, but not children */
+        }
+        .slider-container label {
+            display: block;
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 500;
+            color: #9ca3af; /* text-gray-400 */
+            margin-bottom: 0.25rem; /* mb-1 */
+            pointer-events: none;
+        }
+        .slider-container .slider-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .slider-container input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 75%; /* Make room for the value label */
+            height: 8px;
+            background: #1f2937; /* bg-gray-800 */
+            border-radius: 4px; /* rounded-full */
+            outline: none;
+            cursor: pointer;
+            pointer-events: auto; /* Allow slider to be interactive */
+        }
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #22d3ee; /* cyan-400 */
+            border-radius: 50%; /* rounded-full */
+            cursor: pointer;
+        }
+        .slider-container input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #22d3ee; /* cyan-400 */
+            border-radius: 50%; /* rounded-full */
+            cursor: pointer;
+        }
+        .slider-container #steps-value {
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 600;
+            color: #f3f4f6; /* text-gray-100 */
+            width: 20%;
+            text-align: right;
+            pointer-events: none;
+        }
+        /* Style for new -/+ buttons */
+        .slider-row button {
+            background-color: #374151; /* bg-gray-700 */
+            color: #f3f4f6; /* text-gray-100 */
+            border: none;
+            width: 28px; /* Fixed width */
+            height: 28px; /* Fixed height */
+            border-radius: 50%; /* rounded-full */
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 500;
+            line-height: 1; /* Center the +/- */
+            cursor: pointer;
+            padding: 0;
+            margin: 0 4px;
+            pointer-events: auto; /* Allow buttons to be interactive */
+            transition: background-color 0.15s ease;
+        }
+        .slider-row button:hover {
+            background-color: #4b5563; /* bg-gray-600 */
+        }
+        .slider-container input[type="range"] {
+            width: 55%; /* Adjusted width */
+        }
+        /* New Reset Button */
+        #reset-btn {
+            background-color: #ef4444; /* bg-red-500 */
+            color: #f3f4f6; /* text-gray-100 */
+            border: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem; /* rounded-md */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 0.75rem; /* mt-3 */
+            transition: background-color 0.15s ease;
+        }
+        #reset-btn:hover {
+            background-color: #dc2626; /* bg-red-600 */
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Simulation Info Panel -->
+    <div id="info" class="panel shadow-lg">
+        <h1>3D Cycle Lattice</h1>
+        <p>This simulation models the "Rule of 3" and "Glitch Step" from your notes.</p>
+        <p class="mt-4 text-xs text-gray-400">Use your mouse to orbit, pan, and zoom. Click and drag panels to move them.</p>
+
+        <!-- New Temporal Mode Toggle -->
+        <div class="toggle-container">
+            <input type="checkbox" id="temporal-mode">
+            <label for="temporal-mode">Temporal Mode (4-Branch)</label>
+        </div>
+        <!-- New Temporal Fractal Mode Toggle -->
+        <div class="toggle-container" style="margin-top: 0.5rem;">
+            <input type="checkbox" id="temporal-fractal-mode">
+            <label for="temporal-fractal-mode">Temporal Fractal Mode</label>
+        </div>
+        <p class="text-xs text-gray-400 mt-1">
+            <b>Temporal Mode:</b> Each 3-cycle iteration moves one "cubic space" along the X-axis.
+        </p>
+        <p class="text-xs text-gray-400 mt-2">
+            Old cycles fade and disappear after 9 iterations (generations).
+        </p>
+
+        <div class="quote">
+            <p>"The Sobolev gradient approach is an efficient way to construct preconditioned iterations for solving nonlinear problems. We extend this technique to be applicable for elliptic equations describing stationary states of reaction–diffusion problems if the nonlinearities have certain lack of differentiability."</p>
+            <p>- Reaction–diffusion problems arise in various nonlinear models -</p>
+        </div>
+    </div>
+
+    <!-- 2D Temporal Graph -->
+    <div id="graph-container" class="panel">
+        <h2>Temporal Harmonic (Total Particles)</h2>
+        <canvas id="graph-canvas"></canvas>
+    </div>
+
+    <!-- 2D Poincaré-like Map -->
+    <div id="poincare-container" class="panel">
+        <h2>Branching Dynamics (Poincaré Map)</h2>
+        <canvas id="poincare-canvas"></canvas>
+    </div>
+
+    <!-- Control Panel -->
+    <div id="controls" class="panel">
+        <h2>Controls</h2>
+        <div class="control-row">
+            <button id="play-pause-btn">Play</button>
+            <button id="step-btn">Step Fwd</button>
+        </div>
+        <!-- New Slider Control -->
+        <div class="slider-container">
+            <label for="steps-slider">Time Steps per Cycle</label>
+            <div class="slider-row">
+                <button id="step-down-btn">-</button>
+                <input type="range" id="steps-slider" min="1" max="10" value="3" step="1">
+                <span id="steps-value">3</span>
+                <button id="step-up-btn">+</button>
+            </div>
+        </div>
+        <!-- New Reset Button -->
+        <button id="reset-btn">Reset Simulation</button>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let scene, camera, renderer, controls;
+        let particles = [];
+        let graphCtx, particleHistory = [];
+        let poincareCtx;
+        const triangleGroup = new THREE.Group(); // To hold all triangle paths (Tubes)
+        const latticeGroup = new THREE.Group(); // To hold the dynamic wireframe lattice
+
+        // --- Simulation State ---
+        let isPaused = true; // Start paused
+        let playPauseBtn, stepBtn;
+        let stepsSlider, stepsValueLabel;
+        let stepDownBtn, stepUpBtn, resetBtn;
+        let timeStepsPerCycle = 3; // Default value
+
+        // --- Configurable Parameters ---
+        // const PARTICLE_SPEED = 0.02; // No longer used, replaced by timeStepsPerCycle
+        const BRANCH_SCALE = 0.7; // Scale factor for "compression" (0.7 = 70% of original)
+        const BRANCH_ANGLE = Math.PI / 4; // 45 degrees. (Total split is 2 * 45 = 90)
+        const MAX_GENERATIONS = 9; // Stop branching after this depth (9-cycle lifespan)
+        const HUE_SHIFT_PER_GEN = 0.1; // Shift color for new generations
+        const CUBE_SIZE = 10.0; // Size of one "8x8 lattice matrix cube"
+        let isTemporalMode = false; // Toggled by checkbox
+        let isTemporalFractalMode = false; // Toggled by checkbox
+        const FIBONACCI_SCALE_FACTOR = 0.1; // Multiplier for fractal offset
+
+        // --- Lattice LOD Parameters ---
+        const LATTICE_RENDER_RANGE = 3; // Renders a (2*N+1)^3 grid of cubits around camera
+        const LATTICE_DETAIL_DISTANCE = CUBE_SIZE * 2.0; // Distance to show 8x8x8 grid
+        const LATTICE_DAMPENING_FACTOR = 0.25; // Scale down by 25% every 4 generations
+        const COARSE_GRID_DIVISIONS = 1; // 1x1x1
+        const FINE_GRID_DIVISIONS = 8; // 8x8x8
+        const COARSE_GRID_COLOR = 0x4b5563; // gray-600
+        const FINE_GRID_COLOR = 0x374151; // gray-700
+        const latticeCoarseMaterial = new THREE.LineBasicMaterial({ color: COARSE_GRID_COLOR, transparent: true, opacity: 0.2 });
+        const latticeFineMaterial = new THREE.LineBasicMaterial({ color: FINE_GRID_COLOR, transparent: true, opacity: 0.2 });
+        const cameraWorldPos = new THREE.Vector3(); // To store camera position
+        let currentVisualCubeSize = CUBE_SIZE; // For dampened visual grid
+        let currentLatticeDetailDistance = LATTICE_DETAIL_DISTANCE; // For dampened visual grid
+
+        // --- Geometry & Materials ---
+        const particleGeo = new THREE.SphereGeometry(0.1, 16, 16);
+        // Removed lineMat, will use Tube materials
+        let globalPulse = 0; // For harmonic amplitude animation
+
+        // Particle class to manage state
+        class Particle {
+            constructor(points, energy, generation, baseHue, parentCubeIndex) {
+                this.points = points; // [p1, p2, p3] THREE.Vector3
+                this.energy = energy;
+                this.generation = generation;
+                this.baseHue = baseHue;
+                
+                // Calculate this particle's cube index
+                const p1 = this.points[0];
+                this.cubeIndex = new THREE.Vector3(
+                    Math.floor(p1.x / CUBE_SIZE),
+                    Math.floor(p1.y / CUBE_SIZE),
+                    Math.floor(p1.z / CUBE_SIZE)
+                );
+
+                // Check if this is an "energy pass"
+                // An energy pass is now *any* particle in a generation > 0 in temporal mode,
+                // or a different cube in normal mode.
+                this.isEnergyPasser = (isTemporalMode && this.generation > 0) || !this.cubeIndex.equals(parentCubeIndex);
+                
+                this.currentStep = 0; // Index of the *current* point (starts at P1)
+                this.progress = 0.0; // Progress along the current path (0.0 to 1.0)
+                this.startPosition = this.points[0].clone();
+                this.targetPosition = this.points[1].clone(); // First target is P2
+
+                // Calculate initial opacity based on generation (fade over time)
+                this.opacity = 1.0 - (this.generation / MAX_GENERATIONS);
+
+                // Create mesh
+                const color = new THREE.Color().setHSL(this.baseHue, 1.0, 0.7);
+                const mat = new THREE.MeshStandardMaterial({ 
+                    color: color,
+                    emissive: color,
+                    // "Energy passers" get a much higher base emissive intensity
+                    emissiveIntensity: this.isEnergyPasser ? 2.5 : 1.5,
+                    transparent: true,
+                    opacity: this.opacity
+                });
+                this.mesh = new THREE.Mesh(particleGeo, mat);
+                this.mesh.position.copy(this.startPosition);
+                scene.add(this.mesh);
+            }
+
+            update() {
+                // Update opacity for fade-out
+                this.opacity = 1.0 - (this.generation / MAX_GENERATIONS);
+                this.mesh.material.opacity = Math.max(0, this.opacity); // Clamp at 0
+
+                // Animate "energy passer" particle pulse
+                if (this.isEnergyPasser) {
+                    this.mesh.material.emissiveIntensity = 2.0 + Math.sin(Date.now() * 0.01) * 1.5;
+                }
+
+                // Calculate how many steps it takes to cross one path (1/3 of a cycle)
+                const timeStepsPerPath = timeStepsPerCycle / 3.0;
+                // Calculate the progress to add in this single simulation step
+                let progressThisStep = 1.0 / timeStepsPerPath;
+
+                this.progress += progressThisStep;
+
+                // Loop in case progressThisStep > 1.0 (i.e., timeStepsPerCycle < 3)
+                // This will process multiple path segments in a single simulation step.
+                while (this.progress >= 1.0) {
+                    // We have completed or exceeded the current path
+                    const overshootProgress = this.progress - 1.0;
+
+                    // Snap to the target position
+                    this.mesh.position.copy(this.targetPosition);
+
+                    // --- Update Path and Check for Glitch ---
+                    this.currentStep = (this.currentStep + 1) % 3;
+
+                    // --- "Glitch Step" Check ---
+                    if (this.currentStep === 0) {
+                        if (this.generation < MAX_GENERATIONS) {
+                            // Check which branching mode is active
+                            if (isTemporalMode || isTemporalFractalMode) {
+                                temporalBranch(this);
+                            } else {
+                                branch(this);
+                            }
+                        }
+                        // Signal to main loop to remove this particle
+                        return 'die';
+                    }
+
+                    // If no glitch, set up the next path segment
+                    this.startPosition = this.points[this.currentStep].clone();
+                    const nextStep = (this.currentStep + 1) % 3;
+                    this.targetPosition = this.points[nextStep].clone();
+                    
+                    // Set the new progress to the "overshoot"
+                    this.progress = overshootProgress;
+                }
+
+                // If we're here, this.progress < 1.0
+                // Update the mesh position to be partially along the current path
+                this.mesh.position.copy(this.startPosition).lerp(this.targetPosition, this.progress);
+
+                return 'alive';
+            }
+        } 
+
+        // "Glitch Step" - Original 2-Branch Function
+        function branch(p) {
+            const [p1, p2, p3] = p.points;
+
+            // 1. Calculate the coordinate system of the parent triangle
+            const v12 = new THREE.Vector3().subVectors(p2, p1);
+            const v13 = new THREE.Vector3().subVectors(p3, p1);
+            
+            // The "up" vector (normal to the triangle plane)
+            const normal = new THREE.Vector3().crossVectors(v12, v13).normalize();
+            
+            // The "right" vector (along the P1-P2 edge)
+            const right = v12.clone().normalize();
+            
+            // Recalculate "forward" to be truly orthogonal to "right"
+            const forward = new THREE.Vector3().crossVectors(normal, right).normalize();
+
+            // Create a quaternion for the 45-degree "mirror" rotation
+            const quatA = new THREE.Quaternion().setFromAxisAngle(right, BRANCH_ANGLE);
+            const quatB = new THREE.Quaternion().setFromAxisAngle(right, -BRANCH_ANGLE);
+            
+            // 2. Create Branch A
+            const v12_A = v12.clone().multiplyScalar(BRANCH_SCALE).applyQuaternion(quatA);
+            const v13_A = v13.clone().multiplyScalar(BRANCH_SCALE).applyQuaternion(quatA);
+
+            const p1_A = p1.clone(); // Branch starts from the same point
+            const p2_A = p1.clone().add(v12_A);
+            const p3_A = p1.clone().add(v13_A);
+            
+            const pointsA = [p1_A, p2_A, p3_A];
+            const newHueA = (p.baseHue + HUE_SHIFT_PER_GEN) % 1.0;
+            particles.push(new Particle(pointsA, p.energy * 0.5, p.generation + 1, newHueA, p.cubeIndex));
+            drawTrianglePaths(pointsA, newHueA, p.generation + 1, p.cubeIndex);
+
+            // 3. Create Branch B
+            const v12_B = v12.clone().multiplyScalar(BRANCH_SCALE).applyQuaternion(quatB);
+            const v13_B = v13.clone().multiplyScalar(BRANCH_SCALE).applyQuaternion(quatB);
+
+            const p1_B = p1.clone();
+            const p2_B = p1.clone().add(v12_B);
+            const p3_B = p1.clone().add(v13_B);
+
+            const pointsB = [p1_B, p2_B, p3_B];
+            const newHueB = (p.baseHue - HUE_SHIFT_PER_GEN + 1.0) % 1.0; // +1 to keep modulo positive
+            particles.push(new Particle(pointsB, p.energy * 0.5, p.generation + 1, newHueB, p.cubeIndex));
+            drawTrianglePaths(pointsB, newHueB, p.generation + 1, p.cubeIndex);
+        }
+
+        // Fibonacci helper function (memoized for efficiency)
+        const fibMemo = {};
+        function fib(n) {
+            if (n in fibMemo) return fibMemo[n];
+            if (n <= 0) return 0;
+            if (n <= 2) return 1;
+            fibMemo[n] = fib(n - 1) + fib(n - 2);
+            return fibMemo[n];
+        }
+
+        // "Glitch Step" - New 4-Branch "Temporal Mode" Function
+        function temporalBranch(p) {
+            const [p1, p2, p3] = p.points;
+
+            // 1. Calculate the coordinate system of the parent triangle
+            const v12 = new THREE.Vector3().subVectors(p2, p1);
+            const v13 = new THREE.Vector3().subVectors(p3, p1);
+            const normal = new THREE.Vector3().crossVectors(v12, v13).normalize();
+            const right = v12.clone().normalize();
+            const forward = new THREE.Vector3().crossVectors(normal, right).normalize();
+
+            // --- Temporal Space Progression ---
+            // The new "start" point is projected one CUBE_SIZE in "front" (along X-axis)
+            // of the *original* generation 0 point.
+            const temporalOffset = new THREE.Vector3((p.generation + 1) * CUBE_SIZE, 0, 0);
+            
+            // Base the new triangle on the original p1, but offset it in time (X-axis)
+            let p1_start = new THREE.Vector3(0, 0, 0).add(temporalOffset);
+
+            // --- Temporal Fractal Offset ---
+            // This offset is *added* to the new temporally-displaced start point
+            if (isTemporalFractalMode) {
+                // We apply the fibonacci offset based on the parent's *local* coordinate system
+                const offsetMagnitude = fib(p.generation) * FIBONACCI_SCALE_FACTOR;
+                // Get parent's normal (relative to its own XZ plane, not the world)
+                const parent_v12 = v12.clone().setX(0); // Project to YZ plane
+                const parent_v13 = v13.clone().setX(0); // Project to YZ plane
+                const local_normal = new THREE.Vector3().crossVectors(parent_v12, parent_v13).normalize();
+                
+                const offset = local_normal.multiplyScalar(offsetMagnitude);
+                p1_start.add(offset); // Add this fractal offset
+            }
+            // All new branches will start from p1_start
+
+            // 2. Create 4 Quaternions for 4-way split
+            const quatA = new THREE.Quaternion().setFromAxisAngle(right, BRANCH_ANGLE);
+            const quatB = new THREE.Quaternion().setFromAxisAngle(right, -BRANCH_ANGLE);
+            const quatC = new THREE.Quaternion().setFromAxisAngle(forward, BRANCH_ANGLE);
+            const quatD = new THREE.Quaternion().setFromAxisAngle(forward, -BRANCH_ANGLE);
+
+            // Create scaled-down vectors relative to the new p1_start's plane
+            const v12_scaled = new THREE.Vector3(0, v12.y, v12.z).multiplyScalar(BRANCH_SCALE);
+            const v13_scaled = new THREE.Vector3(0, v13.y, v13.z).multiplyScalar(BRANCH_SCALE);
+
+            // 3. Create Branch A (+Right)
+            const v12_A = v12_scaled.clone().applyQuaternion(quatA);
+            const v13_A = v13_scaled.clone().applyQuaternion(quatA);
+            const pointsA = [p1_start, p1_start.clone().add(v12_A), p1_start.clone().add(v13_A)];
+            const newHueA = (p.baseHue + HUE_SHIFT_PER_GEN) % 1.0;
+            particles.push(new Particle(pointsA, p.energy * 0.25, p.generation + 1, newHueA, p.cubeIndex));
+            drawTrianglePaths(pointsA, newHueA, p.generation + 1, p.cubeIndex);
+
+            // 4. Create Branch B (-Right)
+            const v12_B = v12_scaled.clone().applyQuaternion(quatB);
+            const v13_B = v13_scaled.clone().applyQuaternion(quatB);
+            const pointsB = [p1_start, p1_start.clone().add(v12_B), p1_start.clone().add(v13_B)];
+            const newHueB = (p.baseHue - HUE_SHIFT_PER_GEN + 1.0) % 1.0;
+            particles.push(new Particle(pointsB, p.energy * 0.25, p.generation + 1, newHueB, p.cubeIndex));
+            drawTrianglePaths(pointsB, newHueB, p.generation + 1, p.cubeIndex);
+            
+            // 5. Create Branch C (+Forward)
+            const v12_C = v12_scaled.clone().applyQuaternion(quatC);
+            const v13_C = v13_scaled.clone().applyQuaternion(quatC);
+            const pointsC = [p1_start, p1_start.clone().add(v12_C), p1_start.clone().add(v13_C)];
+            const newHueC = (p.baseHue + HUE_SHIFT_PER_GEN * 0.5) % 1.0;
+            particles.push(new Particle(pointsC, p.energy * 0.25, p.generation + 1, newHueC, p.cubeIndex));
+            drawTrianglePaths(pointsC, newHueC, p.generation + 1, p.cubeIndex);
+
+            // 6. Create Branch D (-Forward)
+            const v12_D = v12_scaled.clone().applyQuaternion(quatD);
+            const v13_D = v13_scaled.clone().applyQuaternion(quatD);
+            const pointsD = [p1_start, p1_start.clone().add(v12_D), p1_start.clone().add(v13_D)];
+            const newHueD = (p.baseHue - HUE_SHIFT_PER_GEN * 0.5 + 1.0) % 1.0;
+            particles.push(new Particle(pointsD, p.energy * 0.25, p.generation + 1, newHueD, p.cubeIndex));
+            drawTrianglePaths(pointsD, newHueD, p.generation + 1, p.cubeIndex);
+        }
+
+        // --- Simulation Reset ---
+        function resetSimulation() {
+            // 1. Pause the simulation
+            if (!isPaused) {
+                isPaused = true;
+                playPauseBtn.textContent = 'Play';
+                if (stepBtn) stepBtn.disabled = false;
+            }
+
+            // 2. Clear all particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                scene.remove(p.mesh);
+                if (p.mesh.geometry) p.mesh.geometry.dispose();
+                if (p.mesh.material) p.mesh.material.dispose();
+            }
+            particles = []; // Empty the array
+
+            // 3. Clear all triangle tubes
+            while(triangleGroup.children.length > 0){ 
+                const child = triangleGroup.children[0];
+                triangleGroup.remove(child);
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+            }
+
+            // 4. Clear graphs
+            particleHistory = [];
+            if (graphCtx) graphCtx.clearRect(0, 0, graphCtx.canvas.width, graphCtx.canvas.height);
+            if (poincareCtx) poincareCtx.clearRect(0, 0, poincareCtx.canvas.width, poincareCtx.canvas.height);
+            drawGraph(); // Redraw empty graphs
+            drawPoincare();
+
+            // 5. Reset lattice dampening
+            currentVisualCubeSize = CUBE_SIZE;
+            currentLatticeDetailDistance = LATTICE_DETAIL_DISTANCE;
+
+            // 6. Create the initial "Generation 0" cycle
+            createInitialParticle();
+        }
+
+        // Helper to create the first particle (used by init and reset)
+        function createInitialParticle() {
+            const initialSize = 5;
+            const p1 = new THREE.Vector3(0, 0, 0);
+            const p2 = new THREE.Vector3(0, initialSize, 0); // Changed to Y-axis
+            const p3 = new THREE.Vector3(0, initialSize / 2, initialSize * Math.sqrt(3) / 2); // Now in YZ-plane
+            
+            const initialPoints = [p1, p2, p3];
+            const initialHue = 0.6; // Start with a blue/purple
+            const initialCubeIndex = new THREE.Vector3(0, 0, 0);
+            
+            // Add initial particle
+            particles.push(new Particle(initialPoints, 1.0, 0, initialHue, initialCubeIndex));
+            
+            // Draw initial triangle paths
+            drawTrianglePaths(initialPoints, initialHue, 0, initialCubeIndex);
+        }
+
+        // Helper to draw the wireframe for one cubit (Coarse or Fine)
+        function addCubitWireframe(center, size, divisions, material) {
+            const points = [];
+            const halfSize = size / 2;
+            const step = size / divisions;
+            
+            // Use a small epsilon to avoid z-fighting if lines are perfectly on axis
+            const epsilon = 0.001; 
+            const centerWithEpsilon = center.clone().add(new THREE.Vector3(epsilon, epsilon, epsilon));
+
+            for (let i = 0; i <= divisions; i++) {
+                for (let j = 0; j <= divisions; j++) {
+                    let x = -halfSize + i * step;
+                    let y = -halfSize + j * step;
+                    
+                    // Lines in Z direction
+                    points.push(new THREE.Vector3(x, y, -halfSize).add(centerWithEpsilon));
+                    points.push(new THREE.Vector3(x, y,  halfSize).add(centerWithEpsilon));
+
+                    let z = -halfSize + i * step;
+                    y = -halfSize + j * step;
+                    // Lines in X direction (Mistake here, should be Y direction)
+                    // Corrected: Lines in Y direction
+                    points.push(new THREE.Vector3(x, -halfSize, z).add(centerWithEpsilon));
+                    points.push(new THREE.Vector3(x,  halfSize, z).add(centerWithEpsilon));
+
+                    x = -halfSize + i * step; // Re-init x
+                    z = -halfSize + j * step; // Re-init z
+                    // Lines in X direction
+                    points.push(new THREE.Vector3(-halfSize, x, z).add(centerWithEpsilon)); // Swapped x/y/z for correct iteration
+                    points.push(new THREE.Vector3( halfSize, x, z).add(centerWithEpsilon));
+                }
+            }
+            
+            // Create a unique geometry and material instance for each line segment group
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            // Clone material to ensure opacity changes don't affect all grids
+            const mat = material.clone(); 
+
+            // Calculate opacity based on distance
+            const dist = cameraWorldPos.distanceTo(center);
+            // Fade out grid lines that are far away
+            mat.opacity = material.opacity * (1.0 - Math.min(1.0, dist / (LATTICE_RENDER_RANGE * currentVisualCubeSize)));
+            
+            const lines = new THREE.LineSegments(geo, mat);
+            latticeGroup.add(lines);
+        }
+
+        // Main function to update the dynamic LOD lattice
+        function updateLattice() {
+            // Clear old lattice lines
+            while(latticeGroup.children.length > 0){ 
+                const child = latticeGroup.children[0];
+                latticeGroup.remove(child);
+                // Dispose of geometry and material to free memory
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+            }
+
+            camera.getWorldPosition(cameraWorldPos);
+            
+            // Get the cubit index the camera is in
+            // Use the DYNAMIC visual cube size for this calculation
+            const centerCubeIndexX = Math.round(cameraWorldPos.x / currentVisualCubeSize);
+            const centerCubeIndexY = Math.round(cameraWorldPos.y / currentVisualCubeSize);
+            const centerCubeIndexZ = Math.round(cameraWorldPos.z / currentVisualCubeSize);
+
+            // Loop in a 3D grid around the camera
+            for (let x = -LATTICE_RENDER_RANGE; x <= LATTICE_RENDER_RANGE; x++) {
+                for (let y = -LATTICE_RENDER_RANGE; y <= LATTICE_RENDER_RANGE; y++) {
+                    for (let z = -LATTICE_RENDER_RANGE; z <= LATTICE_RENDER_RANGE; z++) {
+                        
+                        // Use the DYNAMIC visual cube size for this calculation
+                        const cubeX = (centerCubeIndexX + x) * currentVisualCubeSize;
+                        const cubeY = (centerCubeIndexY + y) * currentVisualCubeSize;
+                        const cubeZ = (centerCubeIndexZ + z) * currentVisualCubeSize;
+                        const cubeCenter = new THREE.Vector3(cubeX, cubeY, cubeZ);
+                        
+                        const dist = cameraWorldPos.distanceTo(cubeCenter);
+
+                        // Use the DYNAMIC lattice detail distance
+                        if (dist < currentLatticeDetailDistance) {
+                            // Close to camera: draw 8x8x8 grid
+                            addCubitWireframe(cubeCenter, currentVisualCubeSize, FINE_GRID_DIVISIONS, latticeFineMaterial);
+                        } else {
+                            // Far from camera: draw 1x1x1 grid
+                            addCubitWireframe(cubeCenter, currentVisualCubeSize, COARSE_GRID_DIVISIONS, latticeCoarseMaterial);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Helper to draw the triangle paths as "diffusion gradient" tubes
+        function drawTrianglePaths(points, hue, generation, parentCubeIndex) {
+            const [p1, p2, p3] = points;
+            const color = new THREE.Color().setHSL(hue, 0.8, 0.5);
+
+            // Check if this new path is an "energy passer"
+            const p1Cube = new THREE.Vector3(
+                Math.floor(p1.x / CUBE_SIZE),
+                Math.floor(p1.y / CUBE_SIZE),
+                Math.floor(p1.z / CUBE_SIZE)
+            );
+            // An energy pass is now *any* particle in a generation > 0 in temporal mode,
+            // or a different cube in normal mode.
+            const isEnergyPasser = (isTemporalMode && generation > 0) || !p1Cube.equals(parentCubeIndex);
+
+            // Calculate opacity based on generation (fade over time)
+            const opacity = Math.max(0.1, 1.0 - (generation / MAX_GENERATIONS));
+
+            // Create a material that can pulse
+            const tubeMat = new THREE.MeshStandardMaterial({
+                color: color,
+                emissive: color,
+                emissiveIntensity: isEnergyPasser ? 1.0 : 0.5, // Brighter base for energy passers
+                transparent: true,
+                opacity: isEnergyPasser ? opacity : opacity * 0.8, // Make energy passers slightly more opaque
+                // Store this state for the global animation loop
+                userData: { isEnergyPasser: isEnergyPasser, generation: generation }
+            });
+
+            // Calculate radius based on generation (compression)
+            const radius = 0.05 * Math.pow(BRANCH_SCALE, generation);
+
+            // Create 3 paths
+            const path12 = new THREE.CatmullRomCurve3([p1, p2]);
+            const path23 = new THREE.CatmullRomCurve3([p2, p3]);
+            const path31 = new THREE.CatmullRomCurve3([p3, p1]);
+
+            // Create 3 tubes
+            const tube12_Geo = new THREE.TubeGeometry(path12, 10, radius, 5, false);
+            const tube23_Geo = new THREE.TubeGeometry(path23, 10, radius, 5, false);
+            const tube31_Geo = new THREE.TubeGeometry(path31, 10, radius, 5, false);
+
+            const tube12 = new THREE.Mesh(tube12_Geo, tubeMat);
+            const tube23 = new THREE.Mesh(tube23_Geo, tubeMat);
+            const tube31 = new THREE.Mesh(tube31_Geo, tubeMat);
+
+            // Add to the group
+            triangleGroup.add(tube12);
+            triangleGroup.add(tube23);
+            triangleGroup.add(tube31);
+        }
+
+        // Helper to draw the 2D temporal graph
+        function drawGraph() {
+            if (!graphCtx) return;
+
+            const canvas = graphCtx.canvas;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // 1. Clear and draw background
+            graphCtx.fillStyle = 'rgba(17, 24, 39, 0.0)'; // Fully transparent
+            graphCtx.clearRect(0, 0, w, h);
+
+            // 2. Find max value for scaling
+            let maxParticles = 0;
+            for (const val of particleHistory) {
+                if (val > maxParticles) maxParticles = val;
+            }
+            maxParticles = Math.max(5, maxParticles); // Ensure a minimum scale (e.g., 5 particles)
+
+            // 3. Draw the line
+            graphCtx.strokeStyle = '#22d3ee'; // text-cyan-400
+            graphCtx.lineWidth = 2;
+            graphCtx.beginPath();
+            
+            for (let i = 0; i < particleHistory.length; i++) {
+                const x = i; // x position
+                
+                // Map particle count to y-coordinate, with 5px padding top/bottom
+                const y_normalized = particleHistory[i] / maxParticles;
+                const y = h - (y_normalized * (h - 10)) - 5; 
+                
+                if (i === 0) {
+                    graphCtx.moveTo(x, y);
+                } else {
+                    graphCtx.lineTo(x, y);
+                }
+            }
+            graphCtx.stroke();
+
+            // 4. Draw labels
+            graphCtx.fillStyle = '#f3f4f6'; // text-gray-100
+            graphCtx.font = '10px Inter';
+            graphCtx.textAlign = 'left';
+            graphCtx.fillText(`Active: ${particleHistory[particleHistory.length - 1] || 0}`, 5, 12);
+            graphCtx.textAlign = 'right';
+            graphCtx.fillText(`Max: ${Math.round(maxParticles)}`, w - 5, 12);
+        }
+
+        // Helper to draw the 2D Poincaré-like map
+        function drawPoincare() {
+            if (!poincareCtx) return;
+
+            const canvas = poincareCtx.canvas;
+            const w = canvas.width;
+            const h = canvas.height;
+            const centerX = w / 2;
+            const centerY = h / 2;
+            const maxRadius = (w / 2) - 10; // 10px padding
+
+            // 1. Clear and draw background
+            poincareCtx.fillStyle = 'rgba(17, 24, 39, 0.0)'; // Fully transparent
+            poincareCtx.clearRect(0, 0, w, h);
+
+            // 2. Draw the "disk" boundary
+            poincareCtx.strokeStyle = '#374151'; // border-gray-700
+            poincareCtx.lineWidth = 1;
+            poincareCtx.beginPath();
+            poincareCtx.arc(centerX, centerY, maxRadius, 0, 2 * Math.PI);
+            poincareCtx.stroke();
+
+            // 3. Plot each particle
+            for (const p of particles) {
+                // Map generation to radius (0 = center, MAX_GENERATIONS = edge)
+                const r = (p.generation / (MAX_GENERATIONS + 1)) * maxRadius;
+                // Map hue to angle
+                const theta = p.baseHue * 2 * Math.PI;
+
+                const x = centerX + r * Math.cos(theta);
+                const y = centerY + r * Math.sin(theta);
+
+                // Draw the particle
+                const color = new THREE.Color().setHSL(p.baseHue, 1.0, 0.7);
+                poincareCtx.fillStyle = `#${color.getHexString()}`;
+                
+                // Set opacity based on fade-out
+                poincareCtx.globalAlpha = Math.max(0.1, 1.0 - (p.generation / MAX_GENERATIONS));
+
+                poincareCtx.beginPath();
+                poincareCtx.arc(x, y, 2, 0, 2 * Math.PI); // 2px radius dot
+                poincareCtx.fill();
+            }
+            poincareCtx.globalAlpha = 1.0; // Reset global alpha
+
+            // 4. Draw labels
+            poincareCtx.fillStyle = '#9ca3af'; // text-gray-400
+            poincareCtx.font = '10px Inter';
+            poincareCtx.textAlign = 'center';
+            poincareCtx.fillText('Gen 0', centerX, centerY + 4);
+            poincareCtx.fillText(`Gen ${MAX_GENERATIONS}`, centerX, centerY - maxRadius - 2);
+        }
+
+
+        // Initialization function
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x111827, 10, 100);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 15);
+
+            // Renderer
+            try {
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                document.body.appendChild(renderer.domElement);
+            } catch (error) {
+                console.error("Error creating WebGL renderer:", error);
+                const errorPanel = document.createElement('div');
+                // Use inline styles for simplicity, mimicking the 'panel' class
+                errorPanel.style.position = 'absolute';
+                errorPanel.style.padding = '1rem';
+                errorPanel.style.backgroundColor = 'rgba(239, 68, 68, 0.9)'; // bg-red-500/90
+                errorPanel.style.border = '1px solid #b91c1c'; // border-red-700
+                errorPanel.style.borderRadius = '0.5rem';
+                errorPanel.style.top = '50%';
+                errorPanel.style.left = '50%';
+                errorPanel.style.transform = 'translate(-50%, -50%)';
+                errorPanel.style.maxWidth = '400px';
+                errorPanel.style.zIndex = '100';
+                errorPanel.style.color = 'white';
+
+                errorPanel.innerHTML = `
+                    <h1 style="font-size: 1.25rem; font-weight: 600;">Fatal Error: WebGL Not Supported</h1>
+                    <p style="margin-top: 0.5rem;">Could not create the WebGL context.</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.75rem;">This may be due to your browser, graphics card, or environment settings. Please try refreshing the page or using a different browser.</p>
+                    <p style="margin-top: 0.25rem; font-size: 0.75rem;">Error: ${error.message}</p>
+                `;
+                document.body.appendChild(errorPanel);
+                
+                // Stop the animate loop from running
+                return false; // Signal failure
+            }
+
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+            scene.add(ambientLight);
+            const pointLight = new THREE.PointLight(0xffffff, 1.0);
+            pointLight.position.set(5, 10, 10);
+            scene.add(pointLight);
+
+            // Controls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // Add triangle group to scene
+            scene.add(triangleGroup);
+
+            // Add lattice group to scene
+            scene.add(latticeGroup);
+
+            // --- Graph Canvas Setup ---
+            const graphCanvas = document.getElementById('graph-canvas');
+            if (graphCanvas) {
+                graphCanvas.width = 300; // Set explicit pixel width
+                graphCanvas.height = 100; // Set explicit pixel height
+                graphCtx = graphCanvas.getContext('2d');
+            } else {
+                console.error("Graph canvas not found!");
+            }
+
+            // --- Poincaré Canvas Setup ---
+            const poincareCanvas = document.getElementById('poincare-canvas');
+            if (poincareCanvas) {
+                poincareCanvas.width = 200; // Set explicit pixel width
+                poincareCanvas.height = 200; // Set explicit pixel height
+                poincareCtx = poincareCanvas.getContext('2d');
+            } else {
+                console.error("Poincaré canvas not found!");
+            }
+
+            // --- Create the initial "Generation 0" cycle ---
+            createInitialParticle();
+
+            // Handle window resizing
+            window.addEventListener('resize', () => {
+                if (!renderer) return; // Don't do anything if renderer failed to init
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // --- Temporal Mode Toggle Listener ---
+            const temporalToggle = document.getElementById('temporal-mode');
+            if (temporalToggle) {
+                temporalToggle.addEventListener('change', (e) => {
+                    isTemporalMode = e.target.checked;
+                    // When temporal mode is turned on/off, reset the simulation
+                    // to avoid confusing states
+                    resetSimulation();
+                });
+            } else {
+                console.error("Temporal mode toggle not found!");
+            }
+
+            // --- Temporal Fractal Mode Toggle Listener ---
+            const fractalToggle = document.getElementById('temporal-fractal-mode');
+            if (fractalToggle) {
+                fractalToggle.addEventListener('change', (e) => {
+                    isTemporalFractalMode = e.target.checked;
+                });
+            } else {
+                console.error("Temporal fractal mode toggle not found!");
+            }
+
+            // --- Control Panel Listeners ---
+            playPauseBtn = document.getElementById('play-pause-btn');
+            stepBtn = document.getElementById('step-btn');
+            stepsSlider = document.getElementById('steps-slider');
+            stepsValueLabel = document.getElementById('steps-value');
+            stepDownBtn = document.getElementById('step-down-btn');
+            stepUpBtn = document.getElementById('step-up-btn');
+            resetBtn = document.getElementById('reset-btn');
+            
+            if (stepBtn) stepBtn.disabled = false; // Enabled by default since we start paused
+
+            if (playPauseBtn) {
+                playPauseBtn.addEventListener('click', () => {
+                    isPaused = !isPaused;
+                    if (isPaused) {
+                        playPauseBtn.textContent = 'Play';
+                        if (stepBtn) stepBtn.disabled = false;
+                    } else {
+                        playPauseBtn.textContent = 'Pause';
+                        if (stepBtn) stepBtn.disabled = true;
+                    }
+                });
+            } else {
+                console.error("Play/Pause button not found!");
+            }
+
+            if (stepBtn) {
+                stepBtn.addEventListener('click', () => {
+                    if (isPaused) {
+                        simulationStep();
+                    }
+                });
+            } else {
+                console.error("Step button not found!");
+            }
+
+            // --- New Slider Listener ---
+            if (stepsSlider && stepsValueLabel) {
+                stepsSlider.addEventListener('input', (e) => {
+                    updateSliderValue(parseInt(e.target.value, 10));
+                });
+            } else {
+                console.error("Steps slider or value label not found!");
+            }
+
+            // --- New Button Listeners ---
+            if (stepDownBtn) {
+                stepDownBtn.addEventListener('click', () => {
+                    updateSliderValue(timeStepsPerCycle - 1);
+                });
+            } else {
+                console.error("Step Down button not found!");
+            }
+
+            if (stepUpBtn) {
+                stepUpBtn.addEventListener('click', () => {
+                    updateSliderValue(timeStepsPerCycle + 1);
+                });
+            } else {
+                console.error("Step Up button not found!");
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', resetSimulation);
+            } else {
+                console.error("Reset button not found!");
+            }
+
+
+            // --- Make Panels Draggable ---
+            makeElementDraggable(document.getElementById('info'));
+            makeElementDraggable(document.getElementById('graph-container'));
+            makeElementDraggable(document.getElementById('poincare-container'));
+            makeElementDraggable(document.getElementById('controls'));
+
+            return true; // Signal success
+        }
+
+        // Helper to programmatically update slider
+        function updateSliderValue(newValue) {
+            const min = parseInt(stepsSlider.min, 10);
+            const max = parseInt(stepsSlider.max, 10);
+            newValue = Math.max(min, Math.min(max, newValue)); // Clamp value
+            
+            timeStepsPerCycle = newValue;
+            stepsSlider.value = newValue;
+            stepsValueLabel.textContent = newValue;
+        }
+
+        function makeElementDraggable(elmnt) {
+            if (!elmnt) return; // Don't try to make a null element draggable
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            elmnt.onmousedown = dragMouseDown;
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                // Get the mouse cursor position at startup:
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                // Call a function whenever the cursor moves:
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                // Calculate the new cursor position:
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                // Set the element's new position:
+                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                // Stop moving when mouse button is released:
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
+        // --- Main Simulation Logic ---
+        function simulationStep() {
+            // --- Update Visual Lattice Dampening ---
+            let maxGeneration = 0;
+            for (const p of particles) {
+                if (p.generation > maxGeneration) maxGeneration = p.generation;
+            }
+            // "every 4th step" (generation)
+            const dampeningSteps = Math.floor(maxGeneration / 4);
+            const visualScale = 1.0 / (1.0 + dampeningSteps * LATTICE_DAMPENING_FACTOR);
+            
+            // Update global visual grid parameters
+            currentVisualCubeSize = CUBE_SIZE * visualScale;
+            currentLatticeDetailDistance = LATTICE_DETAIL_DISTANCE * visualScale;
+
+
+            // --- Update Dynamic Lattice ---
+            updateLattice();
+
+            // --- Calculate global pulse for harmonic amplitude ---
+            // sin wave from 0 (dim) to 1 (bright)
+            globalPulse = (Math.sin(Date.now() * 0.005) + 1) / 2; 
+
+            // Animate tube "harmonics"
+            triangleGroup.children.forEach(tube => {
+                if (tube.material) {
+                    // Also update tube opacity based on its generation
+                    const opacity = Math.max(0, 1.0 - (tube.material.userData.generation / MAX_GENERATIONS));
+                    const baseOpacity = tube.material.userData.isEnergyPasser ? opacity : opacity * 0.8;
+                    tube.material.opacity = Math.max(0, baseOpacity); // Clamp at 0
+
+                    if (tube.material.userData.isEnergyPasser) {
+                        // Brighter, faster pulse for energy pass
+                        tube.material.emissiveIntensity = 1.0 + (Math.sin(Date.now() * 0.01) + 1) * 0.75;
+                    } else {
+                        // Normal pulse
+                        tube.material.emissiveIntensity = 0.2 + globalPulse * 0.6;
+                    }
+                }
+            });
+
+            // --- Update Particle History for Graph ---
+            if (graphCtx) {
+                particleHistory.push(particles.length);
+                const maxHistory = graphCtx.canvas.width;
+                if (particleHistory.length > maxHistory) {
+                    particleHistory.shift(); // Remove oldest entry
+                }
+            }
+
+            // Update all particles
+            // Loop backwards to allow for safe removal from array
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const status = particles[i].update();
+                if (status === 'die') {
+                    // Remove particle's mesh from scene and particle from array
+                    scene.remove(particles[i].mesh);
+                    // Dispose of geometry and material
+                    if (particles[i].mesh.geometry) particles[i].mesh.geometry.dispose();
+                    if (particles[i].mesh.material) particles[i].mesh.material.dispose();
+                    particles.splice(i, 1);
+                }
+            }
+            
+            // --- Draw the 2D Graphs ---
+            drawGraph();
+            drawPoincare();
+        }
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (!isPaused) {
+                simulationStep();
+            }
+
+            if (controls) controls.update();
+            if (renderer) renderer.render(scene, camera);
+        }
+
+        // Start
+        if (init()) { // Check if init was successful
+            animate();
+        }
+    </script>
+</body>
+</html>
+
